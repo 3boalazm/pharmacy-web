@@ -16,17 +16,16 @@ export interface AuthResult {
   pharmacy: SessionPharmacy;
 }
 
-/** * GET /auth/bootstrap 
- * تم تعديلها لتُرجع true تلقائياً وبدون ضرب السيرفر، لتجنب الـ 404 ودخول المستخدم لشاشة الإعداد مباشرة
+/** * GET /auth/bootstrap - تم إلغاء نداء السيرفر هنا لمنع الـ 404 تماماً
  */
 export async function bootstrapStatus(signal?: AbortSignal) {
   return { data: { needsSetup: true } };
 }
 
-/** * POST /auth/register
- * تم تعديل المسار من bootstrap إلى register ليتوافق مع الـ Controller الحقيقي في NestJS
+/** * POST /auth/register - تم التوجيه الإجباري للمسار المدعوم في NestJS
  */
 export async function bootstrap(input: { pharmacyName: string; ownerName: string; phone: string; password: string; pin: string }) {
+  // تذكر: لو الباك إند مغير اسم الـ endpoint لـ /users أو غيره، عدلها هنا فوراً
   return api<AuthResult>("/auth/register", { method: "POST", body: input });
 }
 
