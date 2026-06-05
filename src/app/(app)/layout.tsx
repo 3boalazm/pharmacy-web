@@ -17,7 +17,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative z-10 flex min-h-screen">
       <Sidebar />
+<<<<<<< HEAD
       <main className="min-w-0 flex-1 pb-20 lg:pb-0">{children}</main>
+=======
+      <main className="min-w-0 flex-1 pb-16 lg:pb-0">{children}</main>
+>>>>>>> 91694c0ebbd810250755934c50313a2bb82f6478
       <MobileNav />
       <AccountActions />
     </div>

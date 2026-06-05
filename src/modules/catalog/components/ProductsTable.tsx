@@ -11,11 +11,23 @@ import { Table, THead, Th, Tr, Td } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatMoney } from "@/lib/utils/money";
 import { getSession, hasRole } from "@/lib/auth/session";
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 91694c0ebbd810250755934c50313a2bb82f6478
 import { DatabaseZap, PackagePlus, Printer } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/toast";
 import { LabelSheet, type LabelItem } from "./LabelSheet";
 import { printArea } from "@/lib/utils/print";
+<<<<<<< HEAD
+=======
+=======
+import { DatabaseZap, PackagePlus } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { useToast } from "@/components/ui/toast";
+>>>>>>> 6f62a637c281a0762fa880cf0a3b3c194c3e5be6
+>>>>>>> 91694c0ebbd810250755934c50313a2bb82f6478
 
 /** Product List — catalog master data (descriptive truth; quantities live in Inventory). */
 export function ProductsTable() {
