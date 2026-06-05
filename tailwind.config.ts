@@ -6,6 +6,7 @@ import type { Config } from "tailwindcss";
  * Tailwind only references the variables — no module may introduce its own palette.
  */
 const config: Config = {
+  darkMode: "class",
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {

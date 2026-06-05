@@ -3,8 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
-// 🚀 استوردنا الـ api instance الأساسي مباشرة لتغيير الـ Endpoint بدقة
-import { api } from "../api"; 
+import { bootstrap } from "../api";
 import { setSession } from "@/lib/auth/session";
 import { ApiException } from "@/lib/api/http";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -34,17 +33,9 @@ export function SetupForm() {
 
   async function submit(v: Values) {
     try {
-      // 🛠️ التعديل السحري هنا:
-      // غيرنا المسار من الدالة القديمة إلى الـ POST الفعلي المسؤول عن الـ Register أو الـ Setup في الباك إند.
-      // ملاحظة: لو الباك إند بيستقبل على '/identity/setup' أو '/auth/register' تقدر تغيرها هنا فوراً.
-      const { data } = await api.post("/auth/register", {
-        pharmacyName: v.pharmacyName,
-        ownerName: v.ownerName,
-        phone: v.phone,
-        password: v.password,
-        pin: v.pin,
+      const { data } = await bootstrap({
+        pharmacyName: v.pharmacyName, ownerName: v.ownerName, phone: v.phone, password: v.password, pin: v.pin,
       });
-
       setSession({ accessToken: data.accessToken, user: data.user, pharmacy: data.pharmacy });
       router.replace("/");
     } catch (err) {

@@ -21,7 +21,7 @@ export default function InventoryPage() {
   return (
     <>
       <Topbar title="المخزون" />
-      <div className="space-y-4 p-6">
+      <div className="space-y-4 p-4 md:p-6">
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex rounded-el border border-line bg-card p-0.5">
             {tabs.map((t) => (

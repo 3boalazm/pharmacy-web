@@ -17,3 +17,11 @@ export async function createMedicine(input: {
 }) {
   return api<Medicine>("/medicines", { method: "POST", body: input });
 }
+
+/** POST /medicines/import-base — استيراد كتالوج 1,951 صنفًا من داخل النظام (OWNER، idempotent). */
+export async function importBaseCatalog() {
+  return api<{ fileItems: number; inserted: number; alreadyExisted: number }>("/medicines/import-base", {
+    method: "POST",
+    body: {},
+  });
+}

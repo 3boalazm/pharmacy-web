@@ -57,7 +57,7 @@ export function GrnForm() {
   }
 
   return (
-    <div className="space-y-4 p-6">
+    <div className="space-y-4 p-4 md:p-6">
       <Card>
         <CardHeader title="بيانات الشحنة" />
         <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">

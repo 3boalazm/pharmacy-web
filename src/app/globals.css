@@ -25,6 +25,33 @@
   --c-info-soft: #eaf1fd;
 }
 
+
+/* ─── Dark mode tokens (class strategy; toggled by ThemeProvider) ─── */
+.dark {
+  --c-primary: #22c55e;
+  --c-primary-ink: #86efac;
+  --c-primary-soft: #103122;
+
+  --c-ink: #e7ece8;
+  --c-ink-soft: #a3b0a8;
+  --c-ink-faint: #6b766f;
+
+  --c-paper: #0c1210;       /* deep green-black */
+  --c-card: #131a16;
+  --c-line: #243029;
+
+  --c-danger: #f87171;
+  --c-danger-soft: #3a1715;
+  --c-warn: #fbbf24;
+  --c-warn-soft: #3a2a10;
+  --c-info: #60a5fa;
+  --c-info-soft: #14253f;
+}
+.dark .grain::before { background-image: radial-gradient(rgb(231 236 232 / 0.03) 1px, transparent 1px); }
+.dark ::selection { background: var(--c-primary-soft); color: var(--c-primary-ink); }
+html { color-scheme: light; }
+html.dark { color-scheme: dark; }
+
 html { font-feature-settings: "tnum" 1; }
 body { @apply bg-paper text-ink antialiased; }
 
@@ -44,3 +71,43 @@ body { @apply bg-paper text-ink antialiased; }
 
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .rise { animation: rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+/* ─── إيصال حراري 80mm (منطقة طباعة 72mm) ─── */
+.thermal-receipt { display: none; }
+@media print {
+  body.printing-receipt * { visibility: hidden !important; }
+  body.printing-receipt .thermal-receipt,
+  body.printing-receipt .thermal-receipt * { visibility: visible !important; }
+  body.printing-receipt .thermal-receipt {
+    display: block; position: absolute; inset-inline-start: 0; top: 0;
+    width: 72mm; padding: 2mm; background: #fff; color: #000;
+    font-size: 11px; line-height: 1.5; font-family: var(--font-cairo), sans-serif;
+  }
+  body.printing-receipt .thermal-receipt hr { border: 0; border-top: 1px dashed #000; margin: 2mm 0; }
+  body.printing-receipt .thermal-receipt .rc-title { font-size: 14px; font-weight: 800; text-align: center; }
+  body.printing-receipt .thermal-receipt .rc-meta { text-align: center; font-size: 10px; }
+  body.printing-receipt .thermal-receipt table { width: 100%; border-collapse: collapse; }
+  body.printing-receipt .thermal-receipt .rc-name { padding: 1mm 0; }
+  body.printing-receipt .thermal-receipt .rc-sub { font-size: 9px; }
+  body.printing-receipt .thermal-receipt .rc-amt { text-align: left; vertical-align: top; padding: 1mm 0; white-space: nowrap; }
+  body.printing-receipt .thermal-receipt .rc-row { display: flex; justify-content: space-between; }
+  body.printing-receipt .thermal-receipt .rc-total { font-size: 14px; font-weight: 800; }
+  body.printing-receipt .thermal-receipt .rc-foot { text-align: center; font-size: 10px; margin-top: 2mm; }
+  @page { margin: 0; }
+}
+
+/* ─── ورقة ليبلات الباركود ─── */
+.label-sheet { display: none; }
+@media print {
+  body.printing-labels * { visibility: hidden !important; }
+  body.printing-labels .label-sheet, body.printing-labels .label-sheet * { visibility: visible !important; }
+  body.printing-labels .label-sheet {
+    display: grid; position: absolute; inset-inline-start: 0; top: 0; width: 100%;
+    grid-template-columns: repeat(3, 1fr); gap: 2mm; padding: 4mm; background: #fff; color: #000;
+  }
+  body.printing-labels .label-sheet .label {
+    border: 0.5px dashed #999; padding: 1.5mm; text-align: center; break-inside: avoid;
+  }
+  body.printing-labels .label-sheet .label svg { width: 100%; height: 11mm; }
+  body.printing-labels .label-sheet .label p { font-size: 8px; margin: 0.5mm 0 0; font-family: var(--font-cairo), sans-serif; }
+}
