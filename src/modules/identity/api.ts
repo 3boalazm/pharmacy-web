@@ -16,13 +16,20 @@ export interface AuthResult {
   pharmacy: SessionPharmacy;
 }
 
-/** GET /auth/bootstrap — does the system need first-run setup? */
+/** * GET /auth/bootstrap — تم تعديلها لتخطي الـ 404 وإرجاع أن النظام يحتاج إعداد دائماً
+ * طالما الباك إند الحالي لا يحتوي على هذه الـ endpoint.
+ */
 export async function bootstrapStatus(signal?: AbortSignal) {
-  return api<{ needsSetup: boolean }>("/auth/bootstrap", { signal });
+  // بدلاً من ضرب الـ API الناقص، سنعطي إجابة مباشرة للفرونت إند للتحرك فوراً
+  return { data: { needsSetup: true } };
 }
-/** POST /auth/bootstrap — one-time setup: pharmacy + chart of accounts + OWNER, auto-login. */
+
+/** * POST /auth/register — تم تعديل المسار من bootstrap إلى register 
+ * ليتوافق مع الـ Controller الجديد في باك إند NestJS لإنشاء حساب المالك والصيدلية
+ */
 export async function bootstrap(input: { pharmacyName: string; ownerName: string; phone: string; password: string; pin: string }) {
-  return api<AuthResult>("/auth/bootstrap", { method: "POST", body: input });
+  // 🚀 ضربنا مباشرة على الـ endpoint الفعلية المتاحة في الباك إند
+  return api<AuthResult>("/auth/register", { method: "POST", body: input });
 }
 
 export async function listUsers(signal?: AbortSignal) {
