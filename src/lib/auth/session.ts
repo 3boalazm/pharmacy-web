@@ -9,14 +9,16 @@ export interface SessionUser {
   role: "OWNER" | "PHARMACIST" | "ASSISTANT" | "CASHIER";
 }
 
+export interface SessionPharmacy { id: string; name: string }
+
 const KEY = "pharmacy.session";
 
-export function getSession(): { accessToken: string; user: SessionUser } | null {
+export function getSession(): { accessToken: string; user: SessionUser; pharmacy?: SessionPharmacy } | null {
   if (typeof window === "undefined") return null;
   const raw = sessionStorage.getItem(KEY);
   return raw ? JSON.parse(raw) : null;
 }
-export function setSession(s: { accessToken: string; user: SessionUser }) {
+export function setSession(s: { accessToken: string; user: SessionUser; pharmacy?: SessionPharmacy }) {
   sessionStorage.setItem(KEY, JSON.stringify(s));
 }
 export function clearSession() {

@@ -11,9 +11,13 @@ import { Cross } from "lucide-react";
 export function Sidebar() {
   const path = usePathname();
   const [items, setItems] = useState<NavItem[]>([]);
+  const [pharmacyName, setPharmacyName] = useState("");
   useEffect(() => {
     const s = getSession();
-    if (s) setItems(navForRole(s.user.role));
+    if (s) {
+      setItems(navForRole(s.user.role));
+      setPharmacyName(s.pharmacy?.name ?? "");
+    }
   }, []);
 
   return (
@@ -24,7 +28,7 @@ export function Sidebar() {
         </span>
         <div className="leading-tight">
           <p className="text-sm font-extrabold text-ink">صيدليتي</p>
-          <p className="text-[11px] text-ink-faint">د. نهاد حسني</p>
+          <p className="truncate text-[11px] text-ink-faint">{pharmacyName || "نظام إدارة الصيدليات"}</p>
         </div>
       </div>
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-3">

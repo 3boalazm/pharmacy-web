@@ -1,14 +1,20 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api, ApiException } from "@/lib/api/http";
-import { setSession, type SessionUser } from "@/lib/auth/session";
+import { ApiException, api } from "@/lib/api/http";
+import { setSession, type SessionPharmacy, type SessionUser } from "@/lib/auth/session";
+import { bootstrapStatus } from "@/modules/identity";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Cross } from "lucide-react";
 
-/** POST /auth/login — API Contract §2 */
-interface LoginResponse { accessToken: string; refreshToken: string; user: SessionUser }
+/** POST /auth/login — API Contract §2. يحوّل تلقائيًا إلى /setup عند أول تشغيل. */
+interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: SessionUser;
+  pharmacy?: SessionPharmacy;
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,6 +22,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
+
+  // أول تشغيل؟ → شاشة الإعداد بدل الدخول (فحص صامت؛ لو الخادم نائم نبقى هنا)
+  useEffect(() => {
+    bootstrapStatus()
+      .then(({ data }) => { if (data.needsSetup) router.replace("/setup"); })
+      .catch(() => undefined);
+  }, [router]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,7 +38,7 @@ export default function LoginPage() {
         method: "POST",
         body: { phone, password, deviceId: "web-admin" },
       });
-      setSession({ accessToken: data.accessToken, user: data.user });
+      setSession({ accessToken: data.accessToken, user: data.user, pharmacy: data.pharmacy });
       router.replace("/pos");
     } catch (err) {
       setError(err instanceof ApiException ? err.error.message : "تعذر الاتصال بالخادم");
