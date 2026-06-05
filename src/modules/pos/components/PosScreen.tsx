@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { usePosStore, cartTotals } from "../store";
+import { usePosStore, cartTotals, redeemValue } from "../store";
 import { createSale } from "../api";
 import type { DurAlert, InstallmentPlan, PaymentMethod, SaleResponse } from "../types";
 import { ProductSearch } from "./ProductSearch";
@@ -10,6 +10,7 @@ import { SummaryPanel } from "./SummaryPanel";
 import { PaymentDialog } from "./PaymentDialog";
 import { DurDialog } from "./DurDialog";
 import { SuccessDialog } from "./SuccessDialog";
+import { Receipt, type ReceiptData } from "@/components/print/Receipt";
 import { PinElevateDialog } from "@/components/app/pin-elevate-dialog";
 import { ApiException } from "@/lib/api/http";
 import { useToast } from "@/components/ui/toast";
@@ -24,7 +25,7 @@ interface PendingPayment { method: CheckoutMethod; installmentPlan?: Installment
  */
 export function PosScreen() {
   const toast = useToast();
-  const { lines, invoiceDiscount, customer, clear } = usePosStore();
+  const { lines, invoiceDiscount, customer, clear, redeemPoints } = usePosStore();
   const totals = cartTotals(lines, invoiceDiscount);
 
   const [paymentOpen, setPaymentOpen] = useState(false);
@@ -32,6 +33,7 @@ export function PosScreen() {
   const [durAlerts, setDurAlerts] = useState<DurAlert[] | null>(null);
   const [creditOverrideOpen, setCreditOverrideOpen] = useState(false);
   const [done, setDone] = useState<SaleResponse | null>(null);
+  const [receipt, setReceipt] = useState<ReceiptData | null>(null);
 
   const sale = useMutation({
     mutationFn: (vars: PendingPayment & { override?: { alertIds: string[]; overrideToken: string } }) =>
@@ -49,10 +51,26 @@ export function PosScreen() {
           ...(invoiceDiscount && { invoiceDiscount }),
           payment: { method: vars.method, ...(vars.installmentPlan && { installmentPlan: vars.installmentPlan }) },
           ...(vars.override && { durOverride: vars.override }),
+          ...(redeemPoints > 0 && { loyaltyRedeem: { points: redeemPoints } }),
         },
         vars.override?.overrideToken,
       ),
-    onSuccess: ({ data }) => {
+    onSuccess: ({ data }, vars) => {
+      setReceipt({
+        invoiceNo: data.invoiceNo,
+        createdAt: new Date().toISOString(),
+        customerName: customer?.name,
+        paymentMethod: vars.method,
+        lines: lines.map((l) => ({
+          name: l.medicine.tradeNameAr,
+          quantity: l.quantity,
+          unitPrice: l.unitPrice,
+          lineTotal: (Number(l.unitPrice) * l.quantity).toFixed(2),
+        })),
+        subtotal: totals.subtotal,
+        discount: (Number(totals.lineDiscounts) + Number(totals.invoiceDiscount) + redeemValue(redeemPoints)).toFixed(2),
+        total: data.total,
+      });
       setDone(data);
       clear();
       setPaymentOpen(false);
@@ -117,21 +135,21 @@ export function PosScreen() {
   });
 
   return (
-    <div className="grid h-[calc(100vh-4rem)] grid-cols-12 gap-4 p-4">
-      <section className="col-span-5 flex min-h-0 flex-col">
+    <div className="grid grid-cols-1 gap-4 p-3 lg:h-[calc(100vh-4rem)] lg:grid-cols-12 lg:p-4">
+      <section className="flex min-h-0 flex-col lg:col-span-5">
         <ProductSearch />
       </section>
-      <section className="col-span-4 min-h-0">
+      <section className="min-h-0 lg:col-span-4">
         <CartPanel />
       </section>
-      <section className="col-span-3 min-h-0">
+      <section className="min-h-0 lg:col-span-3">
         <SummaryPanel busy={sale.isPending} onCheckout={openCheckout} />
       </section>
 
       <PaymentDialog
         open={paymentOpen}
         onOpenChange={setPaymentOpen}
-        total={totals.total}
+        total={(Number(totals.total) - redeemValue(redeemPoints)).toFixed(4)}
         busy={sale.isPending}
         onConfirm={confirmPayment}
       />
@@ -161,6 +179,7 @@ export function PosScreen() {
       />
 
       <SuccessDialog sale={done} onClose={() => setDone(null)} />
+      {receipt && <Receipt data={receipt} />}
     </div>
   );
 }

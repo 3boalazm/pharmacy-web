@@ -33,6 +33,7 @@ export function CustomerSelect() {
         </span>
         <span className="flex shrink-0 items-center gap-2">
           <span className="num text-xs text-primary-ink/80">مديونية {formatMoney(customer.balance)}</span>
+          <span className="num text-xs text-primary-ink/80">· نقاط {customer.loyaltyPoints}</span>
           <button onClick={() => setCustomer(null)} aria-label="إزالة العميل" className="rounded p-1 text-primary-ink hover:bg-card">
             <X className="size-4" />
           </button>
@@ -61,7 +62,7 @@ export function CustomerSelect() {
                     key={c.id}
                     value={c.id}
                     onSelect={() => {
-                      setCustomer({ id: c.id, name: c.name, balance: c.balance, creditLimit: c.creditLimit });
+                      setCustomer({ id: c.id, name: c.name, balance: c.balance, creditLimit: c.creditLimit, loyaltyPoints: c.loyaltyPoints ?? 0 });
                       setOpen(false);
                       setTerm("");
                     }}

@@ -23,6 +23,7 @@ const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api/v1";
 interface Opts {
   method?: "GET" | "POST" | "PATCH";
   body?: unknown;
+  token?: string | null; // override session token (customer portal uses its own)
   idempotencyKey?: string;
   overrideToken?: string; // manager/pharmacist override per Contract §0.4
   signal?: AbortSignal;
@@ -31,7 +32,8 @@ interface Opts {
 export async function api<T>(path: string, opts: Opts = {}): Promise<{ data: T; meta?: ListMeta }> {
   const session = getSession();
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (session) headers.Authorization = `Bearer ${session.accessToken}`;
+  const bearer = opts.token !== undefined ? opts.token : session?.accessToken;
+  if (bearer) headers.Authorization = `Bearer ${bearer}`;
   if (opts.idempotencyKey) headers["Idempotency-Key"] = opts.idempotencyKey;
   if (opts.overrideToken) headers["X-Override-Approved"] = opts.overrideToken;
 

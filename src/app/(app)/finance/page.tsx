@@ -5,7 +5,7 @@ export default function FinancePage() {
   return (
     <>
       <Topbar title="المالية — الحوكمة والتسوية" />
-      <div className="p-6"><FinanceView /></div>
+      <div className="p-4 md:p-6"><FinanceView /></div>
     </>
   );
 }

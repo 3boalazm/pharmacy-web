@@ -15,6 +15,9 @@ export interface InvoiceDetail extends InvoiceSummary {
   lines: {
     id: string;
     medicineId: string;
+    nameAr?: string;
+    form?: string;
+    returnedQty?: number;
     quantity: number;
     unitPrice: Money;
     discount: Money;
