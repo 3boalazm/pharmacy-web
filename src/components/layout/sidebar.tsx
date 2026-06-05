@@ -12,12 +12,19 @@ export function Sidebar() {
   const path = usePathname();
   const [items, setItems] = useState<NavItem[]>([]);
   const [pharmacyName, setPharmacyName] = useState("");
+  const [online, setOnline] = useState(true);
   useEffect(() => {
     const s = getSession();
     if (s) {
       setItems(navForRole(s.user.role));
       setPharmacyName(s.pharmacy?.name ?? "");
     }
+    setOnline(navigator.onLine);
+    const up = () => setOnline(true);
+    const down = () => setOnline(false);
+    window.addEventListener("online", up);
+    window.addEventListener("offline", down);
+    return () => { window.removeEventListener("online", up); window.removeEventListener("offline", down); };
   }, []);
 
   return (
@@ -50,7 +57,9 @@ export function Sidebar() {
           );
         })}
       </nav>
-      <p className="px-5 py-4 text-[11px] text-ink-faint">v1.0 · متصل</p>
+      <p className="flex items-center gap-1.5 px-5 py-4 text-[11px] text-ink-faint">
+        v1.0 · <span className={online ? "size-1.5 rounded-full bg-primary" : "size-1.5 rounded-full bg-danger"} /> {online ? "متصل" : "غير متصل — البيع يُحفَظ محليًا"}
+      </p>
     </aside>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { searchMedicines } from "../api";
+import { importBaseCatalog, searchMedicines } from "../api";
 import { CreateMedicineDialog } from "./CreateMedicineDialog";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,14 +10,26 @@ import { Input } from "@/components/ui/input";
 import { Table, THead, Th, Tr, Td } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatMoney } from "@/lib/utils/money";
-import { hasRole } from "@/lib/auth/session";
-import { PackagePlus } from "lucide-react";
+import { getSession, hasRole } from "@/lib/auth/session";
+import { DatabaseZap, PackagePlus } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { useToast } from "@/components/ui/toast";
 
 /** Product List — catalog master data (descriptive truth; quantities live in Inventory). */
 export function ProductsTable() {
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const canWrite = hasRole(["PHARMACIST"]);
+  const isOwner = getSession()?.user.role === "OWNER";
+  const toast = useToast();
+  const importBase = useMutation({
+    mutationFn: importBaseCatalog,
+    onSuccess: ({ data }) => {
+      toast("success", `اكتمل الاستيراد: أُضيف ${data.inserted} صنفًا (${data.alreadyExisted} كانوا موجودين)`);
+      refetch();
+    },
+    onError: (e: Error) => toast("error", e.message),
+  });
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["medicines.list", search],
@@ -29,11 +41,18 @@ export function ProductsTable() {
     <Card>
       <div className="flex items-center gap-2 border-b border-line px-4 py-3">
         <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="بحث في المنتجات…" className="h-9 w-64" />
-        {canWrite && (
-          <Button size="sm" className="ms-auto" onClick={() => setCreateOpen(true)}>
-            <PackagePlus className="size-4" /> منتج جديد
-          </Button>
-        )}
+        <span className="ms-auto flex gap-2">
+          {isOwner && (
+            <Button size="sm" variant="secondary" loading={importBase.isPending} onClick={() => importBase.mutate()}>
+              <DatabaseZap className="size-4" /> استيراد قاعدة الأدوية (1,951)
+            </Button>
+          )}
+          {canWrite && (
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <PackagePlus className="size-4" /> منتج جديد
+            </Button>
+          )}
+        </span>
       </div>
 
       {isLoading ? (
