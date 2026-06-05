@@ -7,3 +7,4 @@ export { InstallmentsView } from "./components/InstallmentsView";
 export { CashFlowView } from "./components/CashFlowView";
 export { ArAgingView } from "./components/ArAgingView";
 export { JournalEntryDialog } from "./components/JournalEntryDialog";
+export { JournalView } from "./components/JournalView";

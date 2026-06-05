@@ -23,6 +23,7 @@ interface PosState {
   lines: CartLine[];
   invoiceDiscount: Discount | null;
   customer: CartCustomer | null;
+  prescriptionId: string | null;
   redeemPoints: number;
   parked: { name: string; lines: CartLine[]; customer: CartCustomer | null; redeemPoints: number }[]; // نقاط ولاء مستبدلة في هذه الفاتورة (1 نقطة = 0.10 ج.م)
   add: (m: Medicine) => void;
@@ -31,6 +32,7 @@ interface PosState {
   setInvoiceDiscount: (d: Discount | null) => void;
   remove: (medicineId: string) => void;
   setCustomer: (c: CartCustomer | null) => void;
+  setPrescription: (id: string | null) => void;
   setRedeemPoints: (p: number) => void;
   park: (name: string) => void;
   recall: (index: number) => void;
@@ -42,6 +44,7 @@ export const usePosStore = create<PosState>((set) => ({
   lines: [],
   invoiceDiscount: null,
   customer: null,
+  prescriptionId: null,
   redeemPoints: 0,
   parked: [],
   add: (m) =>
@@ -59,6 +62,7 @@ export const usePosStore = create<PosState>((set) => ({
   setInvoiceDiscount: (invoiceDiscount) => set({ invoiceDiscount }),
   remove: (id) => set((s) => ({ lines: s.lines.filter((l) => l.medicine.id !== id) })),
   setCustomer: (customer) => set({ customer, redeemPoints: 0 }),
+  setPrescription: (prescriptionId) => set({ prescriptionId }),
   setRedeemPoints: (redeemPoints) => set({ redeemPoints }),
   park: (name) =>
     set((s) => s.lines.length === 0 || s.parked.length >= 5 ? s : ({
@@ -72,7 +76,7 @@ export const usePosStore = create<PosState>((set) => ({
       return { lines: p.lines, customer: p.customer, redeemPoints: p.redeemPoints, parked: s.parked.filter((_, i) => i !== index) };
     }),
   dropParked: (index) => set((s) => ({ parked: s.parked.filter((_, i) => i !== index) })),
-  clear: () => set({ lines: [], invoiceDiscount: null, customer: null, redeemPoints: 0 }),
+  clear: () => set({ lines: [], invoiceDiscount: null, customer: null, redeemPoints: 0, prescriptionId: null }),
 }));
 
 /**

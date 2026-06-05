@@ -7,7 +7,7 @@ export function KpiCard({ label, value, tone = "default", sub, delta }: {
   delta?: { pct: number; label: string } | null;
 }) {
   return (
-    <Card className="relative overflow-hidden px-4 py-4">
+    <Card className="hover-lift relative overflow-hidden px-4 py-4">
       <span className={cn("absolute inset-y-0 end-0 w-1 rounded-s",
         tone === "good" && "bg-primary", tone === "bad" && "bg-danger", tone === "warn" && "bg-warn")} />
       <p className="text-xs font-semibold text-ink-faint">{label}</p>

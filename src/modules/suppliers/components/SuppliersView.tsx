@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,6 +27,7 @@ type FormValues = z.infer<typeof schema>;
 
 /** Suppliers registry — feeds GRN; balance column is the AP subledger projection. */
 export function SuppliersView() {
+  const router = useRouter();
   const [payTarget, setPayTarget] = useState<{ id: string; name: string; balance: string } | null>(null);
   const [payAmount, setPayAmount] = useState("");
   const pay = useMutation({
@@ -74,7 +76,7 @@ export function SuppliersView() {
           <tbody>
             {data.map((s) => (
               <Tr key={s.id}>
-                <Td className="font-bold">{s.name}</Td>
+                <Td className="cursor-pointer font-bold text-primary-ink hover:underline" onClick={() => router.push(`/suppliers/${s.id}`)}>{s.name}</Td>
                 <Td className="num" dir="ltr">{s.phone ?? "—"}</Td>
                 <Td className="num font-bold text-warn">{formatMoney(s.balanceCached ?? "0")}</Td>
                 <Td>

@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { usePosStore, cartTotals, redeemValue } from "../store";
 import { createSale } from "../api";
 import type { DurAlert, InstallmentPlan, PaymentMethod, SaleResponse } from "../types";
+import type { Medicine } from "@/modules/catalog";
 import { ProductSearch } from "./ProductSearch";
 import { CartPanel } from "./CartPanel";
 import { SummaryPanel } from "./SummaryPanel";
@@ -26,7 +27,7 @@ interface PendingPayment { method: PaymentMethod; installmentPlan?: InstallmentP
  */
 export function PosScreen() {
   const toast = useToast();
-  const { lines, invoiceDiscount, customer, clear, redeemPoints, parked, park, recall, dropParked } = usePosStore();
+  const { lines, invoiceDiscount, customer, clear, redeemPoints, parked, park, recall, dropParked, prescriptionId } = usePosStore();
   const totals = cartTotals(lines, invoiceDiscount);
 
   const [paymentOpen, setPaymentOpen] = useState(false);
@@ -42,7 +43,7 @@ export function PosScreen() {
         {
           shiftId: null,
           customerId: customer?.id ?? null,
-          prescriptionId: null,
+          prescriptionId,
           lines: lines.map((l) => ({
             medicineId: l.medicine.id,
             quantity: l.quantity,
@@ -123,6 +124,22 @@ export function PosScreen() {
     setPending(p);
     sale.mutate(p);
   }
+
+  // استقبال روشتة مُرسلة من شاشة الروشتات (POS_HANDOFF) — يملأ السلة ويربط الروشتة
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("pharmacy.pos.handoff");
+      if (!raw) return;
+      sessionStorage.removeItem("pharmacy.pos.handoff");
+      const h = JSON.parse(raw) as { prescriptionId: string; customerId: string | null; lines: { medicine: Medicine; quantity: number }[] };
+      const st = usePosStore.getState();
+      if (st.lines.length > 0) { toast("warn", "السلة غير فارغة — لم تُحمَّل الروشتة"); return; }
+      for (const l of h.lines) { st.add(l.medicine); st.setQty(l.medicine.id, l.quantity); }
+      st.setPrescription(h.prescriptionId);
+      toast("success", "حُمِّلت أصناف الروشتة — أكمل البيع");
+    } catch { /* تجاهل تسليمًا تالفًا */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Global F9 → checkout
   useEffect(() => {

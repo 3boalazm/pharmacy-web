@@ -160,7 +160,11 @@ export function Sidebar() {
                       className={cn(
                         "flex items-center rounded-el text-sm font-medium transition-colors",
                         rail ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
-                        active ? "bg-primary-soft font-bold text-primary-ink" : "text-ink-soft hover:bg-paper",
+<<<<<<< HEAD
+                        active ? "glow-soft bg-primary-soft font-bold text-primary-ink" : "text-ink-soft hover:bg-paper",
+=======
+                        active ? "glow-soft bg-primary-soft font-bold text-primary-ink" : "text-ink-soft hover:bg-paper",
+>>>>>>> 7fb4a48 (تحديث: رفع التعديلات)
                       )}>
                       <Icon className="size-[18px] shrink-0" />
                       {!rail && label}

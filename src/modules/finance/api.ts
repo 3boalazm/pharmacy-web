@@ -80,3 +80,17 @@ export interface AgingRow {
 export async function arAging(signal?: AbortSignal) {
   return api<{ rows: AgingRow[]; totals: Record<string, Money> | null }>("/finance/ar/aging", { signal });
 }
+
+// ───────────── تصفح دفتر الأستاذ + كشف المورد (البندان المعتمدان) ─────────────
+
+export interface JournalRow { id: string; memo: string | null; sourceType: string; createdAt: string; amount: Money }
+export async function journalBrowse(p: { from?: string; to?: string; sourceType?: string; accountCode?: string; skip?: number }, signal?: AbortSignal) {
+  return api<{ rows: JournalRow[]; total: number }>(`/finance/journal${qs(p)}`, { signal });
+}
+export async function ledgerAccounts(signal?: AbortSignal) {
+  return api<{ code: string; name: string; balance: Money }[]>('/finance/accounts', { signal });
+}
+export interface StatementRow { date: string; description: string; debit: Money | null; credit: Money | null; runningBalance: Money; journalEntryId: string }
+export async function supplierStatement(supplierId: string, signal?: AbortSignal) {
+  return api<{ rows: StatementRow[] }>(`/finance/ap/${supplierId}/statement`, { signal });
+}

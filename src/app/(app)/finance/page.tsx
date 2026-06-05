@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Topbar } from "@/components/layout/topbar";
-import { FinanceView, TreasuryCard, CashboxView, InstallmentsView, CashFlowView, ArAgingView } from "@/modules/finance";
+import { FinanceView, TreasuryCard, CashboxView, InstallmentsView, CashFlowView, ArAgingView, JournalView } from "@/modules/finance";
 import { cn } from "@/lib/utils/cn";
 
 const TABS = [
@@ -32,6 +32,7 @@ export default function FinancePage() {
         {tab === "ar" && <ArAgingView />}
         {tab === "cashflow" && <CashFlowView />}
         {tab === "aging" && <ArAgingView />}
+        {tab === "journal" && <JournalView />}
         {tab === "governance" && <div className="space-y-4"><TreasuryCard /><FinanceView /></div>}
       </div>
     </>

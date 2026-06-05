@@ -7,14 +7,14 @@ import { cn } from "@/lib/utils/cn";
 
 /** shadcn/ui Button themed by the system design tokens (globals.css). */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-el text-sm font-medium transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 select-none",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-el text-sm font-medium transition-all duration-200 active:scale-[0.98] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 select-none",
   {
     variants: {
       variant: {
-        default: "bg-primary text-white shadow-sm hover:bg-primary-ink",
+        default: "bg-primary text-white hover:shadow-[var(--glow-soft)] shadow-sm hover:bg-primary-ink",
         secondary: "border border-line bg-card text-ink hover:border-ink-faint",
         ghost: "text-ink-soft hover:bg-primary-soft hover:text-primary-ink",
-        destructive: "bg-danger text-white hover:opacity-90",
+        destructive: "bg-danger text-white hover:shadow-[var(--glow-danger)] hover:opacity-90",
         outline: "border border-primary text-primary-ink hover:bg-primary-soft",
       },
       size: {

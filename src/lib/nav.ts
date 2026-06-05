@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, ShoppingCart, Pill, Users, Truck, Wallet, ReceiptText, Bell, ScrollText, Settings, PackageCheck, BarChart3, Clock,
+  LayoutDashboard, ShoppingCart, Pill, Users, Truck, Wallet, ReceiptText, Bell, ScrollText, Settings, PackageCheck, BarChart3, Clock, FileText,
 } from "lucide-react";
 import type { Role } from "./auth/rbac";
 
@@ -18,6 +18,7 @@ export const NAV: NavItem[] = [
   { section: "المبيعات", href: "/pos", label: "نقطة البيع", icon: ShoppingCart, roles: ["PHARMACIST", "ASSISTANT", "CASHIER"] },
   { section: "المبيعات", href: "/sales", label: "الفواتير", icon: ReceiptText, roles: ["PHARMACIST", "ASSISTANT", "CASHIER"] },
   { section: "المبيعات", href: "/orders", label: "طلبات الستور", icon: PackageCheck, roles: ["PHARMACIST", "ASSISTANT", "CASHIER"] },
+  { section: "المبيعات", href: "/prescriptions", label: "الروشتات", icon: FileText, roles: ["PHARMACIST", "ASSISTANT"] },
   { section: "المبيعات", href: "/shifts", label: "الوردية", icon: Clock, roles: ["PHARMACIST", "ASSISTANT", "CASHIER"] },
   { section: "المالية والتقارير", href: "/reports", label: "التقارير", icon: BarChart3, roles: ["PHARMACIST"] },
   { section: "المالية والتقارير", href: "/finance", label: "المالية", icon: Wallet, roles: [] },

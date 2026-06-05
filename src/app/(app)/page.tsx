@@ -5,6 +5,11 @@ import { Topbar } from "@/components/layout/topbar";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { formatMoney, type Money } from "@/lib/utils/money";
 import { DashboardWidgets } from "@/modules/reporting";
+import { QuickActionButton } from "@/components/ui/quick-action";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { getSession } from "@/lib/auth/session";
+import { FilePlus2, PackagePlus, ShoppingCart, Wallet } from "lucide-react";
 
 /** GET /dashboard — Reporting module read model (Contract §10). */
 interface Dashboard {
@@ -19,6 +24,11 @@ interface Dashboard {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
+  useEffect(() => {
+    const role = getSession()?.user.role;
+    if (role === "CASHIER") router.replace("/pos"); // بيت الكاشير = نقطة البيع
+  }, [router]);
   const { data } = useQuery({
     queryKey: ["dashboard"],
     queryFn: () => api<Dashboard>("/dashboard"),
@@ -30,6 +40,13 @@ export default function DashboardPage() {
     <>
       <Topbar title="لوحة التحكم" />
       <div className="space-y-6 p-4 md:p-6">
+        {/* إجراءات اليوم — «ماذا أفعل الآن؟» */}
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <QuickActionButton href="/pos" label="بيع جديد" icon={ShoppingCart} tone="primary" />
+          <QuickActionButton href="/prescriptions" label="روشتة جديدة" icon={FilePlus2} />
+          <QuickActionButton href="/inventory/grn" label="استلام شحنة" icon={PackagePlus} />
+          <QuickActionButton href="/finance" label="الخزينة" icon={Wallet} />
+        </div>
         <div className="grid grid-cols-2 gap-4 xl:grid-cols-3 2xl:grid-cols-6">
           <KpiCard label="مبيعات اليوم" value={formatMoney(data?.todaySales)} tone="good"
             delta={data && Number(data.yesterdaySales) > 0

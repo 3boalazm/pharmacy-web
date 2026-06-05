@@ -6,3 +6,4 @@ export { AdjustmentForm } from "./components/AdjustmentForm";
 export { getBatches } from "./api";
 export * from "./types";
 export { ADJUSTMENT_REASONS } from "./schemas";
+export { ReorderTable } from "./components/ReorderTable";

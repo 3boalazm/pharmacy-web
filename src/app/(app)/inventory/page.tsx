@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Topbar } from "@/components/layout/topbar";
 import { ProductsTable } from "@/modules/catalog";
-import { MovementsTable, StockTable } from "@/modules/inventory";
+import { MovementsTable, ReorderTable, StockTable } from "@/modules/inventory";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
 import { PackageOpen, SlidersHorizontal } from "lucide-react";
@@ -52,6 +52,7 @@ export default function InventoryPage() {
         {tab === "stock" && <StockTable key="stock" />}
         {tab === "expiry" && <StockTable key="expiry" initialFilter="EXPIRING" />}
         {tab === "movements" && <MovementsTable />}
+        {tab === "reorder" && <ReorderTable />}
       </div>
     </>
   );
