@@ -4,7 +4,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCart } from "../cart";
 import { getPortalSession, clearPortalSession } from "@/lib/shop/session";
 import { Cross, ShoppingBag, ReceiptText, UserRound, LogOut } from "lucide-react";
+<<<<<<< HEAD
 import { ThemeToggle } from "@/components/app/theme";
+=======
+>>>>>>> 6f62a637c281a0762fa880cf0a3b3c194c3e5be6
 import { cn } from "@/lib/utils/cn";
 
 /** قشرة الستور — موبايل أولًا: هيدر خفيف + شريط تنقّل سفلي ثابت. */
@@ -27,7 +30,10 @@ export function ShopShell({ children }: { children: React.ReactNode }) {
           <span className="grid size-8 place-items-center rounded-el bg-primary text-white"><Cross className="size-4" /></span>
           <span className="text-sm font-extrabold">صيدليتي</span>
         </Link>
+<<<<<<< HEAD
         <span className="ms-auto me-1"><ThemeToggle className="rounded-el p-1.5 text-ink-soft hover:bg-paper" /></span>
+=======
+>>>>>>> 6f62a637c281a0762fa880cf0a3b3c194c3e5be6
         {session ? (
           <button
             onClick={() => { clearPortalSession(); router.push("/shop"); router.refresh(); }}

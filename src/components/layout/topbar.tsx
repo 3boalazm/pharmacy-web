@@ -1,4 +1,5 @@
 "use client";
+<<<<<<< HEAD
 import { Bell, LogOut, Menu, X, Cross } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -6,6 +7,9 @@ import { usePathname } from "next/navigation";
 import { navForRole } from "@/lib/nav";
 import { ThemeToggle } from "@/components/app/theme";
 import { cn } from "@/lib/utils/cn";
+=======
+import { Bell, LogOut } from "lucide-react";
+>>>>>>> 6f62a637c281a0762fa880cf0a3b3c194c3e5be6
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api/http";
 import { getSession, clearSession } from "@/lib/auth/session";
@@ -17,9 +21,12 @@ const roleAr: Record<string, string> = { OWNER: "المالك", PHARMACIST: "ص�
 export function Topbar({ title }: { title: string }) {
   const router = useRouter();
   const session = typeof window !== "undefined" ? getSession() : null;
+<<<<<<< HEAD
   const [menuOpen, setMenuOpen] = useState(false);
   const path = usePathname();
   const items = session ? navForRole(session.user.role) : [];
+=======
+>>>>>>> 6f62a637c281a0762fa880cf0a3b3c194c3e5be6
 
   const { data: unread } = useQuery({
     queryKey: ["alerts.count"],
@@ -30,6 +37,7 @@ export function Topbar({ title }: { title: string }) {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-line bg-card/80 px-4 backdrop-blur md:px-6">
+<<<<<<< HEAD
       <div className="flex min-w-0 items-center gap-1">
         <button aria-label="القائمة" onClick={() => setMenuOpen(true)} className="rounded-el p-2 text-ink-soft hover:bg-paper lg:hidden">
           <Menu className="size-5" />
@@ -38,6 +46,10 @@ export function Topbar({ title }: { title: string }) {
       </div>
       <div className="flex items-center gap-1 md:gap-3">
         <ThemeToggle />
+=======
+      <h1 className="truncate text-lg font-extrabold text-ink">{title}</h1>
+      <div className="flex items-center gap-2 md:gap-3">
+>>>>>>> 6f62a637c281a0762fa880cf0a3b3c194c3e5be6
         <button
           aria-label="التنبيهات"
           onClick={() => router.push("/alerts")}
