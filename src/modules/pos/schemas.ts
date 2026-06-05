@@ -34,6 +34,7 @@ export const zCreateSaleRequest = z.object({
     installmentPlan: zInstallmentPlan.optional(),
   }),
   durOverride: z.object({ alertIds: z.array(z.string()), overrideToken: z.string() }).optional(),
+  loyaltyRedeem: z.object({ points: z.number().int().min(1) }).optional(),
 });
 
 export const zSaleResponse = z.object({

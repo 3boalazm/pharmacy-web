@@ -1,4 +1,5 @@
 "use client";
+import { printArea } from "@/lib/utils/print";
 import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -44,6 +45,7 @@ export function SuccessDialog({ sale, onClose }: { sale: SaleResponse | null; on
           </div>
         </DialogBody>
         <DialogFooter>
+          <Button variant="secondary" onClick={() => printArea("receipt")}><Printer className="size-4" /> طباعة إيصال</Button>
           <Button variant="secondary" onClick={onClose}>بيع جديد</Button>
           <Button onClick={() => window.open(sale.receipt.printPayloadUrl, "_blank")}>
             <Printer className="size-4" /> طباعة الفاتورة

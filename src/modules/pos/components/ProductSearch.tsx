@@ -40,6 +40,20 @@ export function ProductSearch() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  /** قارئ USB يكتب الكود ثم Enter — لو النتيجة مطابقة للكود أو وحيدة تُضاف فورًا ويُمسح البحث. */
+  function onScanEnter(e: React.KeyboardEvent) {
+    if (e.key !== "Enter") return;
+    const code = term.trim().toUpperCase();
+    if (code.length < 4) return;
+    const exact = results.find((m) => m.barcode === code || m.internalCode.toUpperCase() === code);
+    const target = exact ?? (results.length === 1 ? results[0] : undefined);
+    if (target) {
+      e.preventDefault();
+      e.stopPropagation();
+      pick(target);
+    }
+  }
+
   function pick(m: Medicine) {
     if ((m.stock?.onHand ?? 0) <= 0) return;
     add(m);
@@ -57,6 +71,7 @@ export function ProductSearch() {
             autoFocus
             value={term}
             onValueChange={setTerm}
+            onKeyDown={onScanEnter}
             placeholder="ابحث بالاسم أو الكود أو امسح الباركود…  ( / )"
           />
           <span className="absolute end-3 top-1/2 -translate-y-1/2 rounded-el bg-primary-soft p-1.5 text-primary-ink" title="جاهز للماسح الضوئي">

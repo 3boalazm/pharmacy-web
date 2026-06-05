@@ -18,7 +18,8 @@ export const DialogContent = React.forwardRef<
       ref={ref}
       dir="rtl"
       className={cn(
-        "rise fixed start-1/2 top-1/2 z-50 w-full max-w-md -translate-y-1/2 translate-x-1/2",
+        "rise fixed start-1/2 top-1/2 z-50 w-[calc(100%-1.5rem)] max-w-md -translate-y-1/2 translate-x-1/2 sm:w-full",
+        "max-h-[calc(100dvh-2rem)] overflow-y-auto",
         "rounded-card border border-line bg-card shadow-pop focus:outline-none",
         className,
       )}

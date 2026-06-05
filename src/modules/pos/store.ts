@@ -16,18 +16,21 @@ export interface CartCustomer {
   name: string;
   balance: Money;
   creditLimit: Money;
+  loyaltyPoints: number;
 }
 
 interface PosState {
   lines: CartLine[];
   invoiceDiscount: Discount | null;
   customer: CartCustomer | null;
+  redeemPoints: number; // نقاط ولاء مستبدلة في هذه الفاتورة (1 نقطة = 0.10 ج.م)
   add: (m: Medicine) => void;
   setQty: (medicineId: string, qty: number) => void;
   setLineDiscount: (medicineId: string, d: Discount | null) => void;
   setInvoiceDiscount: (d: Discount | null) => void;
   remove: (medicineId: string) => void;
   setCustomer: (c: CartCustomer | null) => void;
+  setRedeemPoints: (p: number) => void;
   clear: () => void;
 }
 
@@ -35,6 +38,7 @@ export const usePosStore = create<PosState>((set) => ({
   lines: [],
   invoiceDiscount: null,
   customer: null,
+  redeemPoints: 0,
   add: (m) =>
     set((s) => {
       const existing = s.lines.find((l) => l.medicine.id === m.id);
@@ -49,8 +53,9 @@ export const usePosStore = create<PosState>((set) => ({
     set((s) => ({ lines: s.lines.map((l) => (l.medicine.id === id ? { ...l, discount } : l)) })),
   setInvoiceDiscount: (invoiceDiscount) => set({ invoiceDiscount }),
   remove: (id) => set((s) => ({ lines: s.lines.filter((l) => l.medicine.id !== id) })),
-  setCustomer: (customer) => set({ customer }),
-  clear: () => set({ lines: [], invoiceDiscount: null, customer: null }),
+  setCustomer: (customer) => set({ customer, redeemPoints: 0 }),
+  setRedeemPoints: (redeemPoints) => set({ redeemPoints }),
+  clear: () => set({ lines: [], invoiceDiscount: null, customer: null, redeemPoints: 0 }),
 }));
 
 /**
@@ -87,3 +92,6 @@ export function cartTotals(lines: CartLine[], invoiceDiscount: Discount | null) 
     total: fmt(netC + taxC),
   };
 }
+
+/** قيمة النقاط المستبدلة بالجنيه (عرض فقط — الخادم هو الحاسم). */
+export const redeemValue = (points: number) => Math.round(points * 10) / 100;
