@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Design System Tokens (single source of truth — per system design system) ───
+   Primary green #16A34A · Cairo typeface · 8px spacing grid · radii 8/12px      */
+:root {
+  --c-primary: #16a34a;
+  --c-primary-ink: #0c5e2b;
+  --c-primary-soft: #e8f7ee;
+
+  --c-ink: #101b14;        /* near-black with a green undertone */
+  --c-ink-soft: #46554c;
+  --c-ink-faint: #8a978f;
+
+  --c-paper: #f4f6f3;      /* warm clinical paper, not flat white */
+  --c-card: #ffffff;
+  --c-line: #e3e8e2;
+
+  --c-danger: #d92d20;
+  --c-danger-soft: #fdecea;
+  --c-warn: #b54708;
+  --c-warn-soft: #fef3e6;
+  --c-info: #175cd3;
+  --c-info-soft: #eaf1fd;
+}
+
+html { font-feature-settings: "tnum" 1; }
+body { @apply bg-paper text-ink antialiased; }
+
+/* Money & quantities always align in tables */
+.num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+
+/* Subtle paper grain to avoid flat-white sterility (kept extremely faint) */
+.grain::before {
+  content: ""; position: fixed; inset: 0; pointer-events: none; opacity: 0.35; z-index: 0;
+  background-image: radial-gradient(rgb(16 27 20 / 0.025) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+::selection { background: var(--c-primary-soft); color: var(--c-primary-ink); }
+
+*:focus-visible { outline: 2px solid var(--c-primary); outline-offset: 2px; border-radius: 4px; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
