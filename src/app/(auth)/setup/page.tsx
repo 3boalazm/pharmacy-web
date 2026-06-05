@@ -1,10 +1,13 @@
 "use client";
+
 import { SetupForm } from "@/modules/identity";
 
-/** /setup — تم تعديله لتخطي فحص الباك إند وعرض شاشة الإعداد فوراً */
+/** * /setup — عرض شاشة الإعداد مباشرة وتخطي فحص الباك إند بالكامل 
+ */
 export default function SetupPage() {
-  // 🚀 تخطينا الـ Query والـ useEffect عشان الباك إند الحالي ناقص الـ bootstrap endpoint
-  // وهنعرض الفورم مباشرة للمستخدم لتسجيل أول حساب (المالك)
-  
-  return <SetupForm />;
+  return (
+    <div className="min-h-screen bg-background">
+      <SetupForm />
+    </div>
+  );
 }
