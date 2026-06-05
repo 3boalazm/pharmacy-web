@@ -14,6 +14,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
 import { formatMoney } from "@/lib/utils/money";
+import { paySupplier } from "@/modules/finance";
+import { HandCoins } from "lucide-react";
 import { Truck } from "lucide-react";
 
 const schema = z.object({
@@ -24,6 +26,17 @@ type FormValues = z.infer<typeof schema>;
 
 /** Suppliers registry — feeds GRN; balance column is the AP subledger projection. */
 export function SuppliersView() {
+  const [payTarget, setPayTarget] = useState<{ id: string; name: string; balance: string } | null>(null);
+  const [payAmount, setPayAmount] = useState("");
+  const pay = useMutation({
+    mutationFn: () => paySupplier({ supplierId: payTarget!.id, amount: payAmount }),
+    onSuccess: ({ data }) => {
+      toast("success", `سُدِّدت الدفعة — رصيد المورد الآن ${data.balanceAfter}`);
+      setPayTarget(null); setPayAmount("");
+      refetch();
+    },
+    onError: (e: Error) => toast("error", e.message),
+  });
   const toast = useToast();
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
@@ -42,6 +55,7 @@ export function SuppliersView() {
   });
 
   return (
+    <>
     <Card>
       <div className="flex items-center gap-2 border-b border-line px-4 py-3">
         <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="بحث في الموردين…" className="h-9 w-64" />
@@ -63,6 +77,12 @@ export function SuppliersView() {
                 <Td className="font-bold">{s.name}</Td>
                 <Td className="num" dir="ltr">{s.phone ?? "—"}</Td>
                 <Td className="num font-bold text-warn">{formatMoney(s.balanceCached ?? "0")}</Td>
+                <Td>
+                  <Button size="sm" variant="secondary" disabled={Number(s.balanceCached ?? 0) <= 0}
+                    onClick={() => setPayTarget({ id: s.id, name: s.name, balance: String(s.balanceCached ?? "0") })}>
+                    <HandCoins className="size-3.5" /> سداد
+                  </Button>
+                </Td>
               </Tr>
             ))}
           </tbody>
@@ -98,5 +118,21 @@ export function SuppliersView() {
         </DialogContent>
       </Dialog>
     </Card>
+      {/* سداد مورد (Payables) — DR 2000 / CR 1000 عبر المسار القائم */}
+      <Dialog open={!!payTarget} onOpenChange={(o) => !o && setPayTarget(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>سداد للمورد {payTarget?.name}</DialogTitle></DialogHeader>
+          <DialogBody className="space-y-3">
+            <p className="text-sm text-ink-soft">المستحق عليه حاليًا: <b className="num">{payTarget ? formatMoney(payTarget.balance) : ""}</b> ج.م</p>
+            <Input label="مبلغ الدفعة" inputMode="decimal" dir="ltr" className="num text-end" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} autoFocus />
+            <p className="rounded-el bg-paper px-3 py-2 text-[11px] text-ink-faint">سيُقيَّد: مدين دائنو الموردين / دائن النقدية — ويظهر فورًا في كشف المورد وحركة النقدية.</p>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPayTarget(null)}>إلغاء</Button>
+            <Button loading={pay.isPending} disabled={!payAmount || Number(payAmount) <= 0} onClick={() => pay.mutate()}>تأكيد السداد</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

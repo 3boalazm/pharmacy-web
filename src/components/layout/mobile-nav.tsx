@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { navForRole, type NavItem } from "@/lib/nav";
 import { getSession } from "@/lib/auth/session";
 import { cn } from "@/lib/utils/cn";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Clock } from "lucide-react";
 
 /** تنقّل الموبايل لشاشات الإدارة: شريط سفلي بأهم 4 شاشات + «المزيد» يفتح بقية القائمة. */
 export function MobileNav() {
@@ -50,9 +50,10 @@ export function MobileNav() {
           <button aria-label="إغلاق" onClick={() => setMoreOpen(false)} className="absolute inset-0 bg-ink/40" />
           <div className="rise absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-line bg-card p-4 pb-8">
             <div className="mb-3 flex items-center justify-between">
-              <p className="text-sm font-extrabold">كل الشاشات</p>
+              <Link href="/shifts" onClick={() => setMoreOpen(false)} className="flex items-center gap-1.5 text-sm font-extrabold text-primary-ink"><Clock className="size-4" /> الوردية</Link>
               <button aria-label="إغلاق" onClick={() => setMoreOpen(false)} className="rounded p-1.5 text-ink-faint hover:bg-paper"><X className="size-4" /></button>
             </div>
+            {/* بحسب المجموعات */}
             <ul className="grid grid-cols-3 gap-2">
               {rest.map(({ href, label, icon: Icon }) => (
                 <li key={href}>

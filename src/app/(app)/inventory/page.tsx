@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Topbar } from "@/components/layout/topbar";
 import { ProductsTable } from "@/modules/catalog";
-import { StockTable } from "@/modules/inventory";
+import { MovementsTable, StockTable } from "@/modules/inventory";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
 import { PackageOpen, SlidersHorizontal } from "lucide-react";
@@ -12,6 +12,7 @@ const tabs = [
   { key: "stock", label: "مستويات المخزون" },
   { key: "products", label: "المنتجات" },
   { key: "expiry", label: "متابعة الصلاحية" },
+  { key: "movements", label: "الحركات" },
 ] as const;
 type Tab = (typeof tabs)[number]["key"];
 
@@ -50,6 +51,7 @@ export default function InventoryPage() {
         {tab === "products" && <ProductsTable />}
         {tab === "stock" && <StockTable key="stock" />}
         {tab === "expiry" && <StockTable key="expiry" initialFilter="EXPIRING" />}
+        {tab === "movements" && <MovementsTable />}
       </div>
     </>
   );

@@ -23,7 +23,8 @@ interface PosState {
   lines: CartLine[];
   invoiceDiscount: Discount | null;
   customer: CartCustomer | null;
-  redeemPoints: number; // نقاط ولاء مستبدلة في هذه الفاتورة (1 نقطة = 0.10 ج.م)
+  redeemPoints: number;
+  parked: { name: string; lines: CartLine[]; customer: CartCustomer | null; redeemPoints: number }[]; // نقاط ولاء مستبدلة في هذه الفاتورة (1 نقطة = 0.10 ج.م)
   add: (m: Medicine) => void;
   setQty: (medicineId: string, qty: number) => void;
   setLineDiscount: (medicineId: string, d: Discount | null) => void;
@@ -31,6 +32,9 @@ interface PosState {
   remove: (medicineId: string) => void;
   setCustomer: (c: CartCustomer | null) => void;
   setRedeemPoints: (p: number) => void;
+  park: (name: string) => void;
+  recall: (index: number) => void;
+  dropParked: (index: number) => void;
   clear: () => void;
 }
 
@@ -39,6 +43,7 @@ export const usePosStore = create<PosState>((set) => ({
   invoiceDiscount: null,
   customer: null,
   redeemPoints: 0,
+  parked: [],
   add: (m) =>
     set((s) => {
       const existing = s.lines.find((l) => l.medicine.id === m.id);
@@ -55,6 +60,18 @@ export const usePosStore = create<PosState>((set) => ({
   remove: (id) => set((s) => ({ lines: s.lines.filter((l) => l.medicine.id !== id) })),
   setCustomer: (customer) => set({ customer, redeemPoints: 0 }),
   setRedeemPoints: (redeemPoints) => set({ redeemPoints }),
+  park: (name) =>
+    set((s) => s.lines.length === 0 || s.parked.length >= 5 ? s : ({
+      parked: [...s.parked, { name, lines: s.lines, customer: s.customer, redeemPoints: s.redeemPoints }],
+      lines: [], customer: null, redeemPoints: 0, invoiceDiscount: null,
+    })),
+  recall: (index) =>
+    set((s) => {
+      const p = s.parked[index];
+      if (!p || s.lines.length > 0) return s; // لا استرجاع فوق سلة بها أصناف
+      return { lines: p.lines, customer: p.customer, redeemPoints: p.redeemPoints, parked: s.parked.filter((_, i) => i !== index) };
+    }),
+  dropParked: (index) => set((s) => ({ parked: s.parked.filter((_, i) => i !== index) })),
   clear: () => set({ lines: [], invoiceDiscount: null, customer: null, redeemPoints: 0 }),
 }));
 

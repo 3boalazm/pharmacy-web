@@ -14,10 +14,11 @@ import { Receipt, type ReceiptData } from "@/components/print/Receipt";
 import { PinElevateDialog } from "@/components/app/pin-elevate-dialog";
 import { ApiException } from "@/lib/api/http";
 import { useToast } from "@/components/ui/toast";
+import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/utils/money";
 
 type CheckoutMethod = Exclude<PaymentMethod, "SPLIT">;
-interface PendingPayment { method: CheckoutMethod; installmentPlan?: InstallmentPlan }
+interface PendingPayment { method: PaymentMethod; installmentPlan?: InstallmentPlan; splits?: { method: CheckoutMethod; amount: string }[] }
 
 /**
  * POS orchestrator — layout per the system wireframe (search · cart · summary, RTL),
@@ -25,7 +26,7 @@ interface PendingPayment { method: CheckoutMethod; installmentPlan?: Installment
  */
 export function PosScreen() {
   const toast = useToast();
-  const { lines, invoiceDiscount, customer, clear, redeemPoints } = usePosStore();
+  const { lines, invoiceDiscount, customer, clear, redeemPoints, parked, park, recall, dropParked } = usePosStore();
   const totals = cartTotals(lines, invoiceDiscount);
 
   const [paymentOpen, setPaymentOpen] = useState(false);
@@ -61,6 +62,7 @@ export function PosScreen() {
         createdAt: new Date().toISOString(),
         customerName: customer?.name,
         paymentMethod: vars.method,
+        splits: vars.splits,
         lines: lines.map((l) => ({
           name: l.medicine.tradeNameAr,
           quantity: l.quantity,
@@ -115,9 +117,9 @@ export function PosScreen() {
     setPaymentOpen(true);
   }
 
-  function confirmPayment(method: CheckoutMethod, installmentPlan?: InstallmentPlan) {
+  function confirmPayment(method: PaymentMethod, installmentPlan?: InstallmentPlan, splits?: { method: CheckoutMethod; amount: string }[]) {
     if (method === "CREDIT" && !customer) return toast("warn", "البيع الآجل يتطلب اختيار عميل");
-    const p = { method, installmentPlan };
+    const p = { method, installmentPlan, splits };
     setPending(p);
     sale.mutate(p);
   }
@@ -125,6 +127,8 @@ export function PosScreen() {
   // Global F9 → checkout
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === "F8") { e.preventDefault(); if (lines.length) park(`معلقة ${parked.length + 1}`); }
+      if (e.key === "F7") { e.preventDefault(); if (!lines.length && parked.length) recall(parked.length - 1); }
       if (e.key === "F9") {
         e.preventDefault();
         if (!paymentOpen && !done && !durAlerts) openCheckout();
@@ -154,6 +158,22 @@ export function PosScreen() {
         onConfirm={confirmPayment}
       />
 
+      {/* فواتير معلقة (F8 تعليق · F7 استرجاع آخر واحدة) */}
+      {parked.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 px-1">
+          <span className="text-[11px] font-bold text-ink-faint">معلقة:</span>
+          {parked.map((pk, i) => (
+            <span key={i} className="flex items-center gap-1 rounded-full border border-line bg-card px-3 py-1 text-xs">
+              <button className="font-bold text-primary-ink disabled:opacity-40" disabled={lines.length > 0}
+                title={lines.length > 0 ? "أفرغ السلة أولًا" : "استرجاع"} onClick={() => recall(i)}>
+                {pk.name} <span className="num text-ink-faint">({pk.lines.length})</span>
+              </button>
+              <button className="text-ink-faint hover:text-danger" title="حذف" onClick={() => dropParked(i)}>×</button>
+            </span>
+          ))}
+        </div>
+      )}
+
       <DurDialog
         alerts={durAlerts}
         onClose={() => { setDurAlerts(null); setPending(null); }}
@@ -177,6 +197,16 @@ export function PosScreen() {
           if (pending) sale.mutate({ ...pending, override: { alertIds: [], overrideToken: token } });
         }}
       />
+
+      {/* شريط الدفع اللاصق — موبايل فقط، فوق شريط التبويبات */}
+      {lines.length > 0 && (
+        <div className="fixed inset-x-0 bottom-14 z-30 border-t border-line bg-card/95 p-2 backdrop-blur lg:hidden">
+          <Button size="lg" className="w-full justify-between" onClick={() => setPaymentOpen(true)}>
+            <span>إتمام البيع (F9)</span>
+            <span className="num font-extrabold">{formatMoney(totals.total)}</span>
+          </Button>
+        </div>
+      )}
 
       <SuccessDialog sale={done} onClose={() => setDone(null)} />
       {receipt && <Receipt data={receipt} />}

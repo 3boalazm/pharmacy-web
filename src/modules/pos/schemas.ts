@@ -60,7 +60,7 @@ export const zDurAlert = z.object({
 /** Payment dialog form (client-side; cashReceived is presentational for change calc). */
 export const zPaymentForm = z
   .object({
-    method: z.enum(["CASH", "CARD", "CREDIT"]),
+    method: z.enum(["CASH", "CARD", "CREDIT", "SPLIT"]),
     cashReceived: z.string().regex(/^\d{0,9}(\.\d{0,2})?$/).optional().or(z.literal("")),
     withInstallments: z.boolean(),
     installmentCount: z.coerce.number().int().min(2).max(24).optional(),

@@ -10,6 +10,7 @@ export interface ReceiptData {
   subtotal: string;
   discount: string;
   total: string;
+  splits?: { method: "CASH" | "CARD" | "CREDIT"; amount: string }[];
 }
 
 const PAY_AR = { CASH: "نقدي", CARD: "بطاقة", CREDIT: "آجل — على الحساب", SPLIT: "مقسّم" } as const;
@@ -45,6 +46,16 @@ export function Receipt({ data }: { data: ReceiptData }) {
         {Number(data.discount) > 0 && <p><span>الخصم</span><b className="num">-{Number(data.discount).toFixed(2)}</b></p>}
         <p className="grand"><span>المطلوب</span><b className="num">{Number(data.total).toFixed(2)} ج.م</b></p>
         <p><span>طريقة الدفع</span><b>{PAY_AR[data.paymentMethod]}</b></p>
+      {data.splits && data.splits.length > 0 && (
+        <div style={{ marginTop: 2 }}>
+          {data.splits.map((sp, i) => (
+            <p key={i} style={{ display: "flex", justifyContent: "space-between" }}>
+              <span>{({ CASH: "نقدي", CARD: "بطاقة", CREDIT: "آجل" })[sp.method]}</span>
+              <span className="num">{sp.amount}</span>
+            </p>
+          ))}
+        </div>
+      )}
       </section>
       <footer>
         <p>شكرًا لزيارتكم — نتمنى لكم الشفاء العاجل</p>

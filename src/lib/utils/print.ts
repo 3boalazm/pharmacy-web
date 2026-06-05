@@ -1,7 +1,7 @@
 "use client";
-/** يطبع منطقة محددة (إيصال/ليبلات) بإضافة كلاس مؤقت على body ثم window.print. */
-export function printArea(mode: "receipt" | "labels") {
-  const cls = mode === "receipt" ? "printing-receipt" : "printing-labels";
+/** يطبع منطقة محددة (إيصال/ليبلات/كشف) بإضافة كلاس مؤقت على body ثم window.print. */
+export function printArea(mode: "receipt" | "labels" | "statement") {
+  const cls = `printing-${mode}`;
   document.body.classList.add(cls);
   const cleanup = () => { document.body.classList.remove(cls); window.removeEventListener("afterprint", cleanup); };
   window.addEventListener("afterprint", cleanup);
