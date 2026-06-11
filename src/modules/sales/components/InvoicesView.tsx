@@ -9,6 +9,12 @@ import { Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle } from "@/
 import { Separator } from "@/components/ui/separator";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatMoney } from "@/lib/utils/money";
+import { ReturnDialog } from "./ReturnDialog";
+import { Button } from "@/components/ui/button";
+import { hasRole } from "@/lib/auth/session";
+import { Undo2, Printer } from "lucide-react";
+import { Receipt, type ReceiptData } from "@/components/print/Receipt";
+import { printArea } from "@/lib/utils/print";
 
 const methodAr = { CASH: "نقدي", CARD: "بطاقة", CREDIT: "آجل", SPLIT: "مختلط" } as const;
 const methodTone = { CASH: "green", CARD: "blue", CREDIT: "amber", SPLIT: "gray" } as const;
@@ -16,6 +22,9 @@ const methodTone = { CASH: "green", CARD: "blue", CREDIT: "amber", SPLIT: "gray"
 /** Invoices list + immutable detail (lines, FEFO allocations, journal linkage). */
 export function InvoicesView({ customerId, compact }: { customerId?: string; compact?: boolean }) {
   const [openId, setOpenId] = useState<string | null>(null);
+  const [returnOpen, setReturnOpen] = useState(false);
+  const [receipt, setReceipt] = useState<ReceiptData | null>(null);
+  const canReturn = hasRole(["ASSISTANT", "PHARMACIST"]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["invoices", customerId ?? "all"],
@@ -67,15 +76,15 @@ export function InvoicesView({ customerId, compact }: { customerId?: string; com
             ) : (
               <div className="space-y-3 text-sm">
                 <Table>
-                  <THead><Th>الكمية</Th><Th>سعر الوحدة</Th><Th>الخصم</Th><Th>الإجمالي</Th><Th>التشغيلات</Th></THead>
+                  <THead><Th>الصنف</Th><Th>الكمية</Th><Th>سعر الوحدة</Th><Th>الخصم</Th><Th>الإجمالي</Th></THead>
                   <tbody>
                     {detail.data.lines.map((l) => (
                       <Tr key={l.id}>
+                        <Td className="text-xs font-bold">{l.nameAr ?? "—"}{(l.returnedQty ?? 0) > 0 && <span className="ms-1 text-[10px] text-warn">مرتجع {l.returnedQty}</span>}</Td>
                         <Td className="num font-bold">{l.quantity}</Td>
                         <Td className="num">{formatMoney(l.unitPrice)}</Td>
                         <Td className="num text-ink-soft">{formatMoney(l.discount)}</Td>
                         <Td className="num font-bold">{formatMoney(l.lineTotal)}</Td>
-                        <Td className="text-xs text-ink-faint">{l.allocations.map((a) => `×${a.quantity}`).join("، ")}</Td>
                       </Tr>
                     ))}
                   </tbody>
@@ -84,12 +93,42 @@ export function InvoicesView({ customerId, compact }: { customerId?: string; com
                 <p className="flex justify-between"><span className="text-ink-soft">الإجمالي الفرعي</span><span className="num">{formatMoney(detail.data.subtotal)}</span></p>
                 <p className="flex justify-between"><span className="text-ink-soft">الخصم</span><span className="num text-danger">-{formatMoney(detail.data.totalDiscount)}</span></p>
                 <p className="flex justify-between text-base font-extrabold"><span>الإجمالي</span><span className="num">{formatMoney(detail.data.total)}</span></p>
-                <p className="text-[11px] text-ink-faint">قيد محاسبي: <span className="font-mono">{detail.data.journalEntryId}</span> — الفاتورة حقيقة غير قابلة للتعديل؛ التصحيح بمرتجع/قيد عكسي.</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[11px] text-ink-faint">الفاتورة حقيقة غير قابلة للتعديل — التصحيح بمرتجع يُرحَّل قيدًا عكسيًا.</p>
+                  <span className="flex gap-2">
+                    <Button size="sm" variant="secondary" onClick={() => {
+                      const d = detail.data!;
+                      setReceipt({
+                        invoiceNo: d.invoiceNo,
+                        createdAt: d.createdAt,
+                        paymentMethod: d.paymentMethod,
+                        lines: d.lines.map((l) => ({ name: l.nameAr ?? "صنف", quantity: l.quantity, unitPrice: l.unitPrice, lineTotal: l.lineTotal })),
+                        subtotal: d.subtotal,
+                        discount: d.totalDiscount,
+                        total: d.total,
+                      });
+                      setTimeout(() => printArea("receipt"), 60);
+                    }}>
+                      <Printer className="size-3.5" /> طباعة
+                    </Button>
+                    {canReturn && (
+                      <Button size="sm" variant="destructive" onClick={() => setReturnOpen(true)}>
+                        <Undo2 className="size-3.5" /> مرتجع
+                      </Button>
+                    )}
+                  </span>
+                </div>
               </div>
             )}
           </DialogBody>
         </DialogContent>
       </Dialog>
+
+      {receipt && <Receipt data={receipt} />}
+
+      {detail.data && (
+        <ReturnDialog invoice={detail.data} open={returnOpen} onOpenChange={setReturnOpen} />
+      )}
     </>
   );
 }

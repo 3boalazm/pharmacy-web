@@ -12,6 +12,7 @@ export interface Customer {
   loyaltyPoints: number;
   lastVisit: string | null;
   allergies: string[];
+  portalStatus?: "ACTIVE" | "PENDING" | null;
 }
 export interface StatementRow {
   date: string;

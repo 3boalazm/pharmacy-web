@@ -17,7 +17,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         dir="rtl"
         toastOptions={{
           classNames: {
-            toast: "rounded-card border font-sans shadow-pop",
+            toast: "slide-up rounded-card border font-sans shadow-pop",
             success: "!bg-primary-soft !text-primary-ink !border-primary/30",
             warning: "!bg-warn-soft !text-warn !border-warn/30",
             error: "!bg-danger-soft !text-danger !border-danger/30",
