@@ -5,7 +5,7 @@ export default function UsersPage() {
   return (
     <>
       <Topbar title="المستخدمون" />
-      <div className="p-6"><UsersView /></div>
+      <div className="p-4 md:p-6"><UsersView /></div>
     </>
   );
 }

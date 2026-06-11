@@ -16,17 +16,13 @@ export interface AuthResult {
   pharmacy: SessionPharmacy;
 }
 
-/** * GET /auth/bootstrap - تم إلغاء نداء السيرفر هنا لمنع الـ 404 تماماً
- */
+/** GET /auth/bootstrap — does the system need first-run setup? */
 export async function bootstrapStatus(signal?: AbortSignal) {
-  return { data: { needsSetup: true } };
+  return api<{ needsSetup: boolean }>("/auth/bootstrap", { signal });
 }
-
-/** * POST /auth/register - تم التوجيه الإجباري للمسار المدعوم في NestJS
- */
+/** POST /auth/bootstrap — one-time setup: pharmacy + chart of accounts + OWNER, auto-login. */
 export async function bootstrap(input: { pharmacyName: string; ownerName: string; phone: string; password: string; pin: string }) {
-  // تذكر: لو الباك إند مغير اسم الـ endpoint لـ /users أو غيره، عدلها هنا فوراً
-  return api<AuthResult>("/auth/register", { method: "POST", body: input });
+  return api<AuthResult>("/auth/bootstrap", { method: "POST", body: input });
 }
 
 export async function listUsers(signal?: AbortSignal) {

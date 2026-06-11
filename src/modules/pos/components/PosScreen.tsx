@@ -1,22 +1,25 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { usePosStore, cartTotals } from "../store";
+import { usePosStore, cartTotals, redeemValue } from "../store";
 import { createSale } from "../api";
 import type { DurAlert, InstallmentPlan, PaymentMethod, SaleResponse } from "../types";
+import type { Medicine } from "@/modules/catalog";
 import { ProductSearch } from "./ProductSearch";
 import { CartPanel } from "./CartPanel";
 import { SummaryPanel } from "./SummaryPanel";
 import { PaymentDialog } from "./PaymentDialog";
 import { DurDialog } from "./DurDialog";
 import { SuccessDialog } from "./SuccessDialog";
+import { Receipt, type ReceiptData } from "@/components/print/Receipt";
 import { PinElevateDialog } from "@/components/app/pin-elevate-dialog";
 import { ApiException } from "@/lib/api/http";
 import { useToast } from "@/components/ui/toast";
+import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/utils/money";
 
 type CheckoutMethod = Exclude<PaymentMethod, "SPLIT">;
-interface PendingPayment { method: CheckoutMethod; installmentPlan?: InstallmentPlan }
+interface PendingPayment { method: PaymentMethod; installmentPlan?: InstallmentPlan; splits?: { method: CheckoutMethod; amount: string }[] }
 
 /**
  * POS orchestrator — layout per the system wireframe (search · cart · summary, RTL),
@@ -24,7 +27,7 @@ interface PendingPayment { method: CheckoutMethod; installmentPlan?: Installment
  */
 export function PosScreen() {
   const toast = useToast();
-  const { lines, invoiceDiscount, customer, clear } = usePosStore();
+  const { lines, invoiceDiscount, customer, clear, redeemPoints, parked, park, recall, dropParked, prescriptionId } = usePosStore();
   const totals = cartTotals(lines, invoiceDiscount);
 
   const [paymentOpen, setPaymentOpen] = useState(false);
@@ -32,6 +35,7 @@ export function PosScreen() {
   const [durAlerts, setDurAlerts] = useState<DurAlert[] | null>(null);
   const [creditOverrideOpen, setCreditOverrideOpen] = useState(false);
   const [done, setDone] = useState<SaleResponse | null>(null);
+  const [receipt, setReceipt] = useState<ReceiptData | null>(null);
 
   const sale = useMutation({
     mutationFn: (vars: PendingPayment & { override?: { alertIds: string[]; overrideToken: string } }) =>
@@ -39,7 +43,7 @@ export function PosScreen() {
         {
           shiftId: null,
           customerId: customer?.id ?? null,
-          prescriptionId: null,
+          prescriptionId,
           lines: lines.map((l) => ({
             medicineId: l.medicine.id,
             quantity: l.quantity,
@@ -49,10 +53,27 @@ export function PosScreen() {
           ...(invoiceDiscount && { invoiceDiscount }),
           payment: { method: vars.method, ...(vars.installmentPlan && { installmentPlan: vars.installmentPlan }) },
           ...(vars.override && { durOverride: vars.override }),
+          ...(redeemPoints > 0 && { loyaltyRedeem: { points: redeemPoints } }),
         },
         vars.override?.overrideToken,
       ),
-    onSuccess: ({ data }) => {
+    onSuccess: ({ data }, vars) => {
+      setReceipt({
+        invoiceNo: data.invoiceNo,
+        createdAt: new Date().toISOString(),
+        customerName: customer?.name,
+        paymentMethod: vars.method,
+        splits: vars.splits,
+        lines: lines.map((l) => ({
+          name: l.medicine.tradeNameAr,
+          quantity: l.quantity,
+          unitPrice: l.unitPrice,
+          lineTotal: (Number(l.unitPrice) * l.quantity).toFixed(2),
+        })),
+        subtotal: totals.subtotal,
+        discount: (Number(totals.lineDiscounts) + Number(totals.invoiceDiscount) + redeemValue(redeemPoints)).toFixed(2),
+        total: data.total,
+      });
       setDone(data);
       clear();
       setPaymentOpen(false);
@@ -97,16 +118,34 @@ export function PosScreen() {
     setPaymentOpen(true);
   }
 
-  function confirmPayment(method: CheckoutMethod, installmentPlan?: InstallmentPlan) {
+  function confirmPayment(method: PaymentMethod, installmentPlan?: InstallmentPlan, splits?: { method: CheckoutMethod; amount: string }[]) {
     if (method === "CREDIT" && !customer) return toast("warn", "البيع الآجل يتطلب اختيار عميل");
-    const p = { method, installmentPlan };
+    const p = { method, installmentPlan, splits };
     setPending(p);
     sale.mutate(p);
   }
 
+  // استقبال روشتة مُرسلة من شاشة الروشتات (POS_HANDOFF) — يملأ السلة ويربط الروشتة
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("pharmacy.pos.handoff");
+      if (!raw) return;
+      sessionStorage.removeItem("pharmacy.pos.handoff");
+      const h = JSON.parse(raw) as { prescriptionId: string; customerId: string | null; lines: { medicine: Medicine; quantity: number }[] };
+      const st = usePosStore.getState();
+      if (st.lines.length > 0) { toast("warn", "السلة غير فارغة — لم تُحمَّل الروشتة"); return; }
+      for (const l of h.lines) { st.add(l.medicine); st.setQty(l.medicine.id, l.quantity); }
+      st.setPrescription(h.prescriptionId);
+      toast("success", "حُمِّلت أصناف الروشتة — أكمل البيع");
+    } catch { /* تجاهل تسليمًا تالفًا */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Global F9 → checkout
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === "F8") { e.preventDefault(); if (lines.length) park(`معلقة ${parked.length + 1}`); }
+      if (e.key === "F7") { e.preventDefault(); if (!lines.length && parked.length) recall(parked.length - 1); }
       if (e.key === "F9") {
         e.preventDefault();
         if (!paymentOpen && !done && !durAlerts) openCheckout();
@@ -117,24 +156,40 @@ export function PosScreen() {
   });
 
   return (
-    <div className="grid h-[calc(100vh-4rem)] grid-cols-12 gap-4 p-4">
-      <section className="col-span-5 flex min-h-0 flex-col">
+    <div className="grid grid-cols-1 gap-4 p-3 lg:h-[calc(100vh-4rem)] lg:grid-cols-12 lg:p-4">
+      <section className="flex min-h-0 flex-col lg:col-span-5">
         <ProductSearch />
       </section>
-      <section className="col-span-4 min-h-0">
+      <section className="min-h-0 lg:col-span-4">
         <CartPanel />
       </section>
-      <section className="col-span-3 min-h-0">
+      <section className="min-h-0 lg:col-span-3">
         <SummaryPanel busy={sale.isPending} onCheckout={openCheckout} />
       </section>
 
       <PaymentDialog
         open={paymentOpen}
         onOpenChange={setPaymentOpen}
-        total={totals.total}
+        total={(Number(totals.total) - redeemValue(redeemPoints)).toFixed(4)}
         busy={sale.isPending}
         onConfirm={confirmPayment}
       />
+
+      {/* فواتير معلقة (F8 تعليق · F7 استرجاع آخر واحدة) */}
+      {parked.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 px-1">
+          <span className="text-[11px] font-bold text-ink-faint">معلقة:</span>
+          {parked.map((pk, i) => (
+            <span key={i} className="flex items-center gap-1 rounded-full border border-line bg-card px-3 py-1 text-xs">
+              <button className="font-bold text-primary-ink disabled:opacity-40" disabled={lines.length > 0}
+                title={lines.length > 0 ? "أفرغ السلة أولًا" : "استرجاع"} onClick={() => recall(i)}>
+                {pk.name} <span className="num text-ink-faint">({pk.lines.length})</span>
+              </button>
+              <button className="text-ink-faint hover:text-danger" title="حذف" onClick={() => dropParked(i)}>×</button>
+            </span>
+          ))}
+        </div>
+      )}
 
       <DurDialog
         alerts={durAlerts}
@@ -160,7 +215,18 @@ export function PosScreen() {
         }}
       />
 
+      {/* شريط الدفع اللاصق — موبايل فقط، فوق شريط التبويبات */}
+      {lines.length > 0 && (
+        <div className="fixed inset-x-0 bottom-14 z-30 border-t border-line bg-card/95 p-2 backdrop-blur lg:hidden">
+          <Button size="lg" className="w-full justify-between" onClick={() => setPaymentOpen(true)}>
+            <span>إتمام البيع (F9)</span>
+            <span className="num font-extrabold">{formatMoney(totals.total)}</span>
+          </Button>
+        </div>
+      )}
+
       <SuccessDialog sale={done} onClose={() => setDone(null)} />
+      {receipt && <Receipt data={receipt} />}
     </div>
   );
 }
