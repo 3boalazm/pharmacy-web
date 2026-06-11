@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { usePosStore, cartTotals } from "../store";
+import { usePosStore, cartTotals, redeemValue } from "../store";
 import { TAX_EXEMPT_LABEL, TAX_LABEL, TAX_RATE } from "../tax";
 import { CustomerSelect } from "./CustomerSelect";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -18,7 +18,7 @@ import type { Discount } from "@/lib/zod/common";
  * 0 today per Architecture §0, so displayed total === server total), and checkout CTA.
  */
 export function SummaryPanel({ onCheckout, busy }: { onCheckout: () => void; busy: boolean }) {
-  const { lines, invoiceDiscount } = usePosStore();
+  const { lines, invoiceDiscount, customer, redeemPoints, setRedeemPoints } = usePosStore();
   const totals = cartTotals(lines, invoiceDiscount);
 
   return (
@@ -27,12 +27,27 @@ export function SummaryPanel({ onCheckout, busy }: { onCheckout: () => void; bus
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
         <CustomerSelect />
         <InvoiceDiscount />
+        {customer && customer.loyaltyPoints > 0 && (
+          <div className="rounded-el border border-line p-3">
+            <p className="mb-1.5 flex items-center justify-between text-xs font-bold text-ink-soft">
+              <span>استبدال نقاط الولاء</span>
+              <span className="num text-ink-faint">المتاح {customer.loyaltyPoints} نقطة = {redeemValue(customer.loyaltyPoints).toFixed(2)} ج.م</span>
+            </p>
+            <div className="flex items-center gap-2">
+              <Input type="number" min={0} max={customer.loyaltyPoints} dir="ltr" className="num h-9 text-end"
+                value={redeemPoints || ""} placeholder="0"
+                onChange={(e) => setRedeemPoints(Math.min(Math.max(0, Number(e.target.value) || 0), customer.loyaltyPoints))} />
+              <Button type="button" size="sm" variant="secondary" onClick={() => setRedeemPoints(customer.loyaltyPoints)}>الكل</Button>
+            </div>
+          </div>
+        )}
 
         <div className="mt-auto space-y-1.5 text-sm">
           <Separator className="mb-2" />
           <Row label="الإجمالي الفرعي" value={formatMoney(totals.subtotal)} />
           {Number(totals.lineDiscounts) > 0 && <Row label="خصومات السطور" value={`-${formatMoney(totals.lineDiscounts)}`} tone="danger" />}
           {Number(totals.invoiceDiscount) > 0 && <Row label="خصم الفاتورة" value={`-${formatMoney(totals.invoiceDiscount)}`} tone="danger" />}
+          {redeemPoints > 0 && <Row label={`نقاط ولاء (${redeemPoints})`} value={`-${redeemValue(redeemPoints).toFixed(2)}`} tone="danger" />}
           <Row
             label={TAX_LABEL}
             value={TAX_RATE === 0 ? TAX_EXEMPT_LABEL : formatMoney(totals.tax)}
@@ -41,7 +56,7 @@ export function SummaryPanel({ onCheckout, busy }: { onCheckout: () => void; bus
           <Separator className="my-2" />
           <p className="flex items-baseline justify-between text-lg font-extrabold">
             <span>الإجمالي</span>
-            <span className="num">{formatMoney(totals.total)}</span>
+            <span className="num">{(Number(totals.total) - redeemValue(redeemPoints)).toFixed(2)}</span>
           </p>
           <p className="text-[11px] leading-relaxed text-ink-faint">
             القيمة النهائية يحددها الخادم — كل عملية بيع قيد محاسبي متوازن غير قابل للتعديل.

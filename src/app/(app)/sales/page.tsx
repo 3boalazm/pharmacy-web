@@ -5,7 +5,7 @@ export default function SalesPage() {
   return (
     <>
       <Topbar title="الفواتير" />
-      <div className="p-6"><InvoicesView /></div>
+      <div className="p-4 md:p-6"><InvoicesView /></div>
     </>
   );
 }

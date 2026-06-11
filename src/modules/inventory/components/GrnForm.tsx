@@ -1,15 +1,17 @@
 "use client";
 import { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createGrn, getSuppliers } from "../api";
+import { createSupplier } from "@/modules/suppliers";
 import type { GrnLineInput } from "../types";
 import { searchMedicines } from "@/modules/catalog";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
 import { Table, THead, Th, Tr, Td } from "@/components/ui/table";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 /**
@@ -26,6 +28,20 @@ export function GrnForm() {
   const [medTerm, setMedTerm] = useState("");
 
   const suppliers = useQuery({ queryKey: ["suppliers"], queryFn: () => getSuppliers(), select: (r) => r.data });
+  const qc = useQueryClient();
+  const [supOpen, setSupOpen] = useState(false);
+  const [supName, setSupName] = useState("");
+  const [supPhone, setSupPhone] = useState("");
+  const createSup = useMutation({
+    mutationFn: () => createSupplier({ name: supName.trim(), phone: supPhone.trim() || undefined }),
+    onSuccess: ({ data }) => {
+      toast("success", `أُضيف المورد ${data.name}`);
+      setSupplierId(data.id);
+      qc.invalidateQueries({ queryKey: ["suppliers"] });
+      setSupOpen(false); setSupName(""); setSupPhone("");
+    },
+    onError: (e: Error) => toast("error", e.message),
+  });
   const meds = useQuery({
     queryKey: ["medicines.grn", medTerm],
     queryFn: ({ signal }) => searchMedicines(medTerm, signal),
@@ -57,7 +73,7 @@ export function GrnForm() {
   }
 
   return (
-    <div className="space-y-4 p-6">
+    <div className="space-y-4 p-4 md:p-6">
       <Card>
         <CardHeader title="بيانات الشحنة" />
         <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
@@ -71,6 +87,9 @@ export function GrnForm() {
               <option value="">— اختر المورد —</option>
               {suppliers.data?.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
+            <button type="button" onClick={() => setSupOpen(true)} className="mt-1 flex items-center gap-1 text-xs font-bold text-primary-ink hover:underline">
+              <UserPlus className="size-3.5" /> إضافة مورد جديد
+            </button>
           </label>
           <Input label="رقم فاتورة المورد" value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} placeholder="S-4471" dir="ltr" className="text-end" />
           <label className="block">
@@ -146,6 +165,21 @@ export function GrnForm() {
           ترحيل الاستلام (GRN)
         </Button>
       </div>
+
+      {/* إضافة مورد سريع — بلا مغادرة شاشة الاستلام */}
+      <Dialog open={supOpen} onOpenChange={setSupOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>مورد جديد</DialogTitle></DialogHeader>
+          <DialogBody className="space-y-3">
+            <Input label="اسم المورد" value={supName} onChange={(e) => setSupName(e.target.value)} autoFocus />
+            <Input label="رقم الهاتف (اختياري)" inputMode="tel" dir="ltr" value={supPhone} onChange={(e) => setSupPhone(e.target.value)} />
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSupOpen(false)}>إلغاء</Button>
+            <Button loading={createSup.isPending} disabled={supName.trim().length < 2} onClick={() => createSup.mutate()}>حفظ واختيار</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

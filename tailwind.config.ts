@@ -6,18 +6,19 @@ import type { Config } from "tailwindcss";
  * Tailwind only references the variables — no module may introduce its own palette.
  */
 const config: Config = {
+  darkMode: "class",
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        primary: { DEFAULT: "var(--c-primary)", soft: "var(--c-primary-soft)", ink: "var(--c-primary-ink)" },
-        ink: { DEFAULT: "var(--c-ink)", soft: "var(--c-ink-soft)", faint: "var(--c-ink-faint)" },
-        paper: "var(--c-paper)",
-        card: "var(--c-card)",
-        line: "var(--c-line)",
-        danger: { DEFAULT: "var(--c-danger)", soft: "var(--c-danger-soft)" },
-        warn: { DEFAULT: "var(--c-warn)", soft: "var(--c-warn-soft)" },
-        info: { DEFAULT: "var(--c-info)", soft: "var(--c-info-soft)" },
+        primary: { DEFAULT: "rgb(var(--c-primary) / <alpha-value>)", soft: "rgb(var(--c-primary-soft) / <alpha-value>)", ink: "rgb(var(--c-primary-ink) / <alpha-value>)" },
+        ink: { DEFAULT: "rgb(var(--c-ink) / <alpha-value>)", soft: "rgb(var(--c-ink-soft) / <alpha-value>)", faint: "rgb(var(--c-ink-faint) / <alpha-value>)" },
+        paper: "rgb(var(--c-paper) / <alpha-value>)",
+        card: "rgb(var(--c-card) / <alpha-value>)",
+        line: "rgb(var(--c-line) / <alpha-value>)",
+        danger: { DEFAULT: "rgb(var(--c-danger) / <alpha-value>)", soft: "rgb(var(--c-danger-soft) / <alpha-value>)" },
+        warn: { DEFAULT: "rgb(var(--c-warn) / <alpha-value>)", soft: "rgb(var(--c-warn-soft) / <alpha-value>)" },
+        info: { DEFAULT: "rgb(var(--c-info) / <alpha-value>)", soft: "rgb(var(--c-info-soft) / <alpha-value>)" },
       },
       borderRadius: { card: "12px", el: "8px" },
       fontFamily: { sans: ["var(--font-cairo)", "system-ui", "sans-serif"] },

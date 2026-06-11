@@ -16,18 +16,27 @@ export interface CartCustomer {
   name: string;
   balance: Money;
   creditLimit: Money;
+  loyaltyPoints: number;
 }
 
 interface PosState {
   lines: CartLine[];
   invoiceDiscount: Discount | null;
   customer: CartCustomer | null;
+  prescriptionId: string | null;
+  redeemPoints: number;
+  parked: { name: string; lines: CartLine[]; customer: CartCustomer | null; redeemPoints: number }[]; // نقاط ولاء مستبدلة في هذه الفاتورة (1 نقطة = 0.10 ج.م)
   add: (m: Medicine) => void;
   setQty: (medicineId: string, qty: number) => void;
   setLineDiscount: (medicineId: string, d: Discount | null) => void;
   setInvoiceDiscount: (d: Discount | null) => void;
   remove: (medicineId: string) => void;
   setCustomer: (c: CartCustomer | null) => void;
+  setPrescription: (id: string | null) => void;
+  setRedeemPoints: (p: number) => void;
+  park: (name: string) => void;
+  recall: (index: number) => void;
+  dropParked: (index: number) => void;
   clear: () => void;
 }
 
@@ -35,6 +44,9 @@ export const usePosStore = create<PosState>((set) => ({
   lines: [],
   invoiceDiscount: null,
   customer: null,
+  prescriptionId: null,
+  redeemPoints: 0,
+  parked: [],
   add: (m) =>
     set((s) => {
       const existing = s.lines.find((l) => l.medicine.id === m.id);
@@ -49,8 +61,22 @@ export const usePosStore = create<PosState>((set) => ({
     set((s) => ({ lines: s.lines.map((l) => (l.medicine.id === id ? { ...l, discount } : l)) })),
   setInvoiceDiscount: (invoiceDiscount) => set({ invoiceDiscount }),
   remove: (id) => set((s) => ({ lines: s.lines.filter((l) => l.medicine.id !== id) })),
-  setCustomer: (customer) => set({ customer }),
-  clear: () => set({ lines: [], invoiceDiscount: null, customer: null }),
+  setCustomer: (customer) => set({ customer, redeemPoints: 0 }),
+  setPrescription: (prescriptionId) => set({ prescriptionId }),
+  setRedeemPoints: (redeemPoints) => set({ redeemPoints }),
+  park: (name) =>
+    set((s) => s.lines.length === 0 || s.parked.length >= 5 ? s : ({
+      parked: [...s.parked, { name, lines: s.lines, customer: s.customer, redeemPoints: s.redeemPoints }],
+      lines: [], customer: null, redeemPoints: 0, invoiceDiscount: null,
+    })),
+  recall: (index) =>
+    set((s) => {
+      const p = s.parked[index];
+      if (!p || s.lines.length > 0) return s; // لا استرجاع فوق سلة بها أصناف
+      return { lines: p.lines, customer: p.customer, redeemPoints: p.redeemPoints, parked: s.parked.filter((_, i) => i !== index) };
+    }),
+  dropParked: (index) => set((s) => ({ parked: s.parked.filter((_, i) => i !== index) })),
+  clear: () => set({ lines: [], invoiceDiscount: null, customer: null, redeemPoints: 0, prescriptionId: null }),
 }));
 
 /**
@@ -87,3 +113,6 @@ export function cartTotals(lines: CartLine[], invoiceDiscount: Discount | null) 
     total: fmt(netC + taxC),
   };
 }
+
+/** قيمة النقاط المستبدلة بالجنيه (عرض فقط — الخادم هو الحاسم). */
+export const redeemValue = (points: number) => Math.round(points * 10) / 100;

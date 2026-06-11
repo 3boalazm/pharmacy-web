@@ -5,7 +5,7 @@ export default function AlertsPage() {
   return (
     <>
       <Topbar title="التنبيهات" />
-      <div className="p-6"><AlertsView /></div>
+      <div className="p-4 md:p-6"><AlertsView /></div>
     </>
   );
 }

@@ -16,7 +16,7 @@ export function AccountActions() {
         onClick={() => setOpen(true)}
         title="تغيير كلمة المرور"
         aria-label="تغيير كلمة المرور"
-        className="fixed bottom-3 start-3 z-40 grid size-10 place-items-center rounded-full border border-line bg-card text-ink-soft shadow-card transition-colors hover:border-primary hover:text-primary"
+        className="fixed bottom-20 start-3 lg:bottom-3 z-40 grid size-10 place-items-center rounded-full border border-line bg-card text-ink-soft shadow-card transition-colors hover:border-primary hover:text-primary"
       >
         <KeyRound className="size-4" />
       </button>

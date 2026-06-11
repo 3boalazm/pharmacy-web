@@ -5,25 +5,52 @@
 /* ─── Design System Tokens (single source of truth — per system design system) ───
    Primary green #16A34A · Cairo typeface · 8px spacing grid · radii 8/12px      */
 :root {
-  --c-primary: #16a34a;
-  --c-primary-ink: #0c5e2b;
-  --c-primary-soft: #e8f7ee;
+  --c-primary: 22 163 74;
+  --c-primary-ink: 12 94 43;
+  --c-primary-soft: 232 247 238;
 
-  --c-ink: #101b14;        /* near-black with a green undertone */
-  --c-ink-soft: #46554c;
-  --c-ink-faint: #8a978f;
+  --c-ink: 16 27 20;        /* near-black with a green undertone */
+  --c-ink-soft: 70 85 76;
+  --c-ink-faint: 138 151 143;
 
-  --c-paper: #f4f6f3;      /* warm clinical paper, not flat white */
-  --c-card: #ffffff;
-  --c-line: #e3e8e2;
+  --c-paper: 244 246 243;      /* warm clinical paper, not flat white */
+  --c-card: 255 255 255;
+  --c-line: 227 232 226;
 
-  --c-danger: #d92d20;
-  --c-danger-soft: #fdecea;
-  --c-warn: #b54708;
-  --c-warn-soft: #fef3e6;
-  --c-info: #175cd3;
-  --c-info-soft: #eaf1fd;
+  --c-danger: 217 45 32;
+  --c-danger-soft: 253 236 234;
+  --c-warn: 181 71 8;
+  --c-warn-soft: 254 243 230;
+  --c-info: 23 92 211;
+  --c-info-soft: 234 241 253;
 }
+
+
+/* ─── Dark mode tokens (class strategy; toggled by ThemeProvider) ─── */
+.dark {
+  --c-primary: 34 197 94;
+  --c-primary-ink: 134 239 172;
+  --c-primary-soft: 16 49 34;
+
+  --c-ink: 231 236 232;
+  --c-ink-soft: 163 176 168;
+  --c-ink-faint: 107 118 111;
+
+  --c-paper: 12 18 16;       /* deep green-black */
+  --c-card: 19 26 22;
+  --c-line: 36 48 41;
+
+  --c-danger: 248 113 113;
+  --c-danger-soft: 58 23 21;
+  --c-warn: 251 191 36;
+  --c-warn-soft: 58 42 16;
+  --c-info: 96 165 250;
+  --c-info-soft: 20 37 63;
+}
+.dark .grain::before { background-image: radial-gradient(rgb(231 236 232 / 0.03) 1px, transparent 1px); }
+.dark ::selection { background: rgb(var(--c-primary-soft)); color: rgb(var(--c-primary-ink)); }
+html { color-scheme: light; }
+html.dark { color-scheme: dark; }
 
 html { font-feature-settings: "tnum" 1; }
 body { @apply bg-paper text-ink antialiased; }
@@ -38,9 +65,107 @@ body { @apply bg-paper text-ink antialiased; }
   background-size: 22px 22px;
 }
 
-::selection { background: var(--c-primary-soft); color: var(--c-primary-ink); }
+::selection { background: rgb(var(--c-primary-soft)); color: rgb(var(--c-primary-ink)); }
 
-*:focus-visible { outline: 2px solid var(--c-primary); outline-offset: 2px; border-radius: 4px; }
+*:focus-visible { outline: 2px solid rgb(var(--c-primary)); outline-offset: 2px; border-radius: 4px; }
 
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .rise { animation: rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+/* ─── إيصال حراري 80mm (منطقة طباعة 72mm) ─── */
+.thermal-receipt { display: none; }
+@media print {
+  body.printing-receipt * { visibility: hidden !important; }
+  body.printing-receipt .thermal-receipt,
+  body.printing-receipt .thermal-receipt * { visibility: visible !important; }
+  body.printing-receipt .thermal-receipt {
+    display: block; position: absolute; inset-inline-start: 0; top: 0;
+    width: 72mm; padding: 2mm; background: #fff; color: #000;
+    font-size: 11px; line-height: 1.5; font-family: var(--font-cairo), sans-serif;
+  }
+  body.printing-receipt .thermal-receipt hr { border: 0; border-top: 1px dashed #000; margin: 2mm 0; }
+  body.printing-receipt .thermal-receipt .rc-title { font-size: 14px; font-weight: 800; text-align: center; }
+  body.printing-receipt .thermal-receipt .rc-meta { text-align: center; font-size: 10px; }
+  body.printing-receipt .thermal-receipt table { width: 100%; border-collapse: collapse; }
+  body.printing-receipt .thermal-receipt .rc-name { padding: 1mm 0; }
+  body.printing-receipt .thermal-receipt .rc-sub { font-size: 9px; }
+  body.printing-receipt .thermal-receipt .rc-amt { text-align: left; vertical-align: top; padding: 1mm 0; white-space: nowrap; }
+  body.printing-receipt .thermal-receipt .rc-row { display: flex; justify-content: space-between; }
+  body.printing-receipt .thermal-receipt .rc-total { font-size: 14px; font-weight: 800; }
+  body.printing-receipt .thermal-receipt .rc-foot { text-align: center; font-size: 10px; margin-top: 2mm; }
+  @page { margin: 0; }
+}
+
+/* ─── ورقة ليبلات الباركود ─── */
+.label-sheet { display: none; }
+@media print {
+  body.printing-labels * { visibility: hidden !important; }
+  body.printing-labels .label-sheet, body.printing-labels .label-sheet * { visibility: visible !important; }
+  body.printing-labels .label-sheet {
+    display: grid; position: absolute; inset-inline-start: 0; top: 0; width: 100%;
+    grid-template-columns: repeat(3, 1fr); gap: 2mm; padding: 4mm; background: #fff; color: #000;
+  }
+  body.printing-labels .label-sheet .label {
+    border: 0.5px dashed #999; padding: 1.5mm; text-align: center; break-inside: avoid;
+  }
+  body.printing-labels .label-sheet .label svg { width: 100%; height: 11mm; }
+  body.printing-labels .label-sheet .label p { font-size: 8px; margin: 0.5mm 0 0; font-family: var(--font-cairo), sans-serif; }
+}
+
+/* ───────── كشف حساب للطباعة (A4) ───────── */
+.statement-print { display: none; }
+body.printing-statement .statement-print { display: block; }
+@media print {
+  body.printing-statement > *:not(.statement-print) { display: none !important; }
+  body.printing-statement .statement-print { display: block; font-size: 12px; color: #000; }
+  .statement-print header { text-align: center; margin-bottom: 12px; border-bottom: 2px solid #000; padding-bottom: 8px; }
+  .statement-print header h1 { font-size: 18px; margin: 0; }
+  .statement-print header h2 { font-size: 14px; margin: 2px 0; font-weight: 700; }
+  .statement-print header p { font-size: 11px; margin: 2px 0; }
+  .statement-print table { width: 100%; border-collapse: collapse; }
+  .statement-print th, .statement-print td { border: 1px solid #999; padding: 4px 6px; text-align: start; }
+  .statement-print th { background: #eee; }
+  .statement-print td.num, .statement-print .num { font-variant-numeric: tabular-nums; direction: ltr; text-align: end; }
+  .statement-print tr.opening td, .statement-print tfoot td { font-weight: 700; background: #f5f5f5; }
+  .statement-print footer { margin-top: 16px; font-size: 10px; }
+  .statement-print footer .sign { margin-top: 24px; text-align: start; }
+}
+
+/* ═══════════ Effects Layer v2.1 — منقول من مراجعة Manus البصرية فوق نظام التوكنات القائم ═══════════ */
+:root {
+  --glow-primary: 0 0 20px rgba(22, 163, 74, 0.25), 0 0 40px rgba(22, 163, 74, 0.1);
+  --glow-soft: 0 0 12px rgba(22, 163, 74, 0.18);
+  --glow-danger: 0 0 16px rgba(217, 45, 32, 0.22);
+  --shadow-elev-1: 0 8px 32px rgba(15, 27, 20, 0.14);
+  --shadow-elev-2: 0 16px 48px rgba(15, 27, 20, 0.2);
+}
+.dark {
+  --glow-primary: 0 0 20px rgba(34, 197, 94, 0.3), 0 0 40px rgba(34, 197, 94, 0.15);
+  --glow-soft: 0 0 12px rgba(34, 197, 94, 0.22);
+  --glow-danger: 0 0 16px rgba(248, 113, 113, 0.28);
+  --shadow-elev-1: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-elev-2: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+@keyframes slideInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes shimmer { 0% { background-position: -600px 0; } 100% { background-position: 600px 0; } }
+
+.glow-soft { box-shadow: var(--glow-soft); }
+.hover-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.hover-lift:hover { transform: translateY(-2px); box-shadow: var(--shadow-elev-1); }
+.glass { background: rgb(var(--c-card) / 0.85); backdrop-filter: blur(8px); }
+.scale-in { animation: scaleIn 0.18s ease-out; }
+.slide-up { animation: slideInUp 0.22s ease-out; }
+.skeleton {
+  background: linear-gradient(90deg, rgb(var(--c-paper)) 0%, rgb(var(--c-line)) 50%, rgb(var(--c-paper)) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
+  border-radius: 6px;
+}
+
+/* احترام تفضيل تقليل الحركة — إتاحة قبل الأناقة */
+@media (prefers-reduced-motion: reduce) {
+  .scale-in, .slide-up, .skeleton, .hover-lift { animation: none !important; transition: none !important; }
+  .hover-lift:hover { transform: none; }
+}

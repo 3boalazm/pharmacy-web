@@ -29,7 +29,7 @@ export async function recordPayment(input: { customerId: string; amount: Money; 
 /** PATCH /customers/:id — profile fields + soft archive. Balance is never writable. */
 export async function updateCustomer(
   id: string,
-  input: Partial<{ name: string; phone: string; creditLimit: Money; allergies: string[]; archived: boolean }>,
+  input: Partial<{ name: string; phone: string; creditLimit: Money; allergies: string[]; archived: boolean; portalApproved: boolean; portalPassword: string }>,
 ) {
   return api<Customer>(`/customers/${id}`, { method: "PATCH", body: input });
 }
