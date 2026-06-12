@@ -1,4 +1,5 @@
 "use client";
+
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
@@ -6,34 +7,40 @@ import { cn } from "@/lib/utils/cn";
 
 export const Dialog = DialogPrimitive.Root;
 export const DialogTrigger = DialogPrimitive.Trigger;
+export const DialogPortal = DialogPrimitive.Portal;
 export const DialogClose = DialogPrimitive.Close;
+
+export const DialogOverlay = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Overlay>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Overlay
+    ref={ref}
+    className={cn(
+      "fixed inset-0 z-50 bg-ink/40 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=open]:fade-in-0",
+      className
+    )}
+    {...props}
+  />
+));
+DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 export const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { hideClose?: boolean }
 >(({ className, children, hideClose, ...props }, ref) => (
   <DialogPrimitive.Portal>
-    <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+    <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
       dir="rtl"
       className={cn(
-<<<<<<< HEAD
-        // موبايل: ورقة سفلية بعرض كامل · md+: متمركزة تمامًا (خصائص فيزيائية تعمل في RTL وLTR)
         "rise fixed z-50 bg-card shadow-pop focus:outline-none",
         "inset-x-0 bottom-0 w-full rounded-t-card border-t border-line",
         "md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:w-[calc(100%-2rem)] md:max-w-md md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-card md:border",
         "max-h-[90dvh] overflow-y-auto md:max-h-[calc(100dvh-2rem)]",
         className,
       )}
-=======
-          "rise fixed z-50 bg-card shadow-pop focus:outline-none",
-          "inset-x-0 bottom-0 w-full rounded-t-card border-t border-line",
-          "md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:w-[calc(100%-2rem)] md:max-w-md md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-card md:border",
-          "max-h-[90dvh] overflow-y-auto md:max-h-[calc(100dvh-2rem)]",
-          className,
-        )}
->>>>>>> d0ae0c678b55c38baf69e9a8e1f2e311703cbb1e
       {...props}
     >
       {children}
@@ -62,6 +69,7 @@ export function DialogHeader({ className, tone = "default", ...props }: React.HT
     />
   );
 }
+
 export const DialogTitle = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
@@ -73,6 +81,7 @@ DialogTitle.displayName = "DialogTitle";
 export function DialogBody({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return <div className={cn("px-5 py-4", className)} {...props} />;
 }
+
 export function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return <div className={cn("flex justify-end gap-2 border-t border-line px-5 py-3", className)} {...props} />;
 }

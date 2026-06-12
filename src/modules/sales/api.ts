@@ -28,7 +28,7 @@ export interface LastInvoiceLine { medicineId: string; nameAr: string; quantity:
 export async function getLastInvoiceForCustomer(customerId: string, signal?: AbortSignal) {
   return api<{ invoiceNo: string; createdAt: string; lines: LastInvoiceLine[] }>(`/sales/last-for-customer/${customerId}`, { signal });
 }
-<<<<<<< HEAD
-=======
 
->>>>>>> d0ae0c678b55c38baf69e9a8e1f2e311703cbb1e
+
+
+

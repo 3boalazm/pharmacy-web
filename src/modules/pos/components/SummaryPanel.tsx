@@ -1,14 +1,12 @@
 "use client";
+
 import { useState } from "react";
-<<<<<<< HEAD
 import { useMutation } from "@tanstack/react-query";
-=======
->>>>>>> d0ae0c678b55c38baf69e9a8e1f2e311703cbb1e
 import { usePosStore, cartTotals, redeemValue } from "../store";
 import { TAX_EXEMPT_LABEL, TAX_LABEL, TAX_RATE } from "../tax";
 import { CustomerSelect } from "./CustomerSelect";
 import { getLastInvoiceForCustomer } from "@/modules/sales";
-import { getMedicine, lookupByBarcode } from "@/modules/catalog";
+import { getMedicine } from "@/modules/catalog";
 import { useToast } from "@/components/ui/toast";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -20,10 +18,6 @@ import { formatMoney } from "@/lib/utils/money";
 import { TicketPercent } from "lucide-react";
 import type { Discount } from "@/lib/zod/common";
 
-/**
- * Summary: customer, invoice-level discount, tax row (VAT-ready; rate from tax.ts —
- * 0 today per Architecture §0, so displayed total === server total), and checkout CTA.
- */
 export function SummaryPanel({ onCheckout, busy }: { onCheckout: () => void; busy: boolean }) {
   const { lines, invoiceDiscount, customer, redeemPoints, setRedeemPoints } = usePosStore();
   const totals = cartTotals(lines, invoiceDiscount);
@@ -56,18 +50,11 @@ export function SummaryPanel({ onCheckout, busy }: { onCheckout: () => void; bus
           {Number(totals.lineDiscounts) > 0 && <Row label="خصومات السطور" value={`-${formatMoney(totals.lineDiscounts)}`} tone="danger" />}
           {Number(totals.invoiceDiscount) > 0 && <Row label="خصم الفاتورة" value={`-${formatMoney(totals.invoiceDiscount)}`} tone="danger" />}
           {redeemPoints > 0 && <Row label={`نقاط ولاء (${redeemPoints})`} value={`-${redeemValue(redeemPoints).toFixed(2)}`} tone="danger" />}
-          <Row
-            label={TAX_LABEL}
-            value={TAX_RATE === 0 ? TAX_EXEMPT_LABEL : formatMoney(totals.tax)}
-            tone="muted"
-          />
+          <Row label={TAX_LABEL} value={TAX_RATE === 0 ? TAX_EXEMPT_LABEL : formatMoney(totals.tax)} tone="muted" />
           <Separator className="my-2" />
           <p className="flex items-baseline justify-between text-lg font-extrabold">
             <span>الإجمالي</span>
             <span className="num">{(Number(totals.total) - redeemValue(redeemPoints)).toFixed(2)}</span>
-          </p>
-          <p className="text-[11px] leading-relaxed text-ink-faint">
-            القيمة النهائية يحددها الخادم — كل عملية بيع قيد محاسبي متوازن غير قابل للتعديل.
           </p>
         </div>
 
@@ -107,39 +94,23 @@ function InvoiceDiscount() {
       <PopoverContent align="start" className="w-64">
         <div className="mb-2 flex rounded-el border border-line p-0.5 text-xs font-bold">
           {(["PERCENT", "AMOUNT"] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setType(t)}
-              className={t === type ? "flex-1 rounded-[6px] bg-primary px-2 py-1.5 text-white" : "flex-1 rounded-[6px] px-2 py-1.5 text-ink-soft hover:bg-paper"}
-            >
+            <button key={t} onClick={() => setType(t)} className={t === type ? "flex-1 rounded-[6px] bg-primary px-2 py-1.5 text-white" : "flex-1 rounded-[6px] px-2 py-1.5 text-ink-soft hover:bg-paper"}>
               {t === "PERCENT" ? "نسبة %" : "مبلغ ج.م"}
             </button>
           ))}
         </div>
         <div className="flex gap-2">
           <Input inputMode="decimal" dir="ltr" className="num h-9 text-end" value={value} onChange={(e) => setValue(e.target.value)} placeholder={type === "PERCENT" ? "5" : "10.00"} />
-          <Button
-            size="sm"
-            className="h-9"
-            onClick={() => {
-              setInvoiceDiscount(value && Number(value) > 0 ? { type, value } : null);
-              setOpen(false);
-            }}
-          >
-            تطبيق
-          </Button>
+          <Button size="sm" className="h-9" onClick={() => { setInvoiceDiscount(value && Number(value) > 0 ? { type, value } : null); setOpen(false); }}>تطبيق</Button>
         </div>
         {invoiceDiscount && (
-          <button onClick={() => { setInvoiceDiscount(null); setOpen(false); }} className="mt-2 text-xs text-danger hover:underline">
-            إزالة الخصم
-          </button>
+          <button onClick={() => { setInvoiceDiscount(null); setOpen(false); }} className="mt-2 text-xs text-danger hover:underline">إزالة الخصم</button>
         )}
       </PopoverContent>
     </Popover>
   );
 }
 
-/** إجراءات سريعة: كرّر آخر فاتورة للعميل · مسح السلة. (تحسين POS، بلا سكيما) */
 function QuickActions() {
   const { customer, lines, add, setQty, clear } = usePosStore();
   const toast = useToast();
@@ -169,14 +140,10 @@ function QuickActions() {
   return (
     <div className="flex gap-2">
       {customer && (
-        <Button variant="secondary" size="sm" className="flex-1" loading={repeat.isPending} onClick={() => repeat.mutate()}>
-          كرّر آخر فاتورة
-        </Button>
+        <Button variant="secondary" size="sm" className="flex-1" loading={repeat.isPending} onClick={() => repeat.mutate()}>كرّر آخر فاتورة</Button>
       )}
       {lines.length > 0 && (
-        <Button variant="ghost" size="sm" className={customer ? "" : "flex-1"} onClick={() => clear()}>
-          مسح السلة
-        </Button>
+        <Button variant="ghost" size="sm" className={customer ? "" : "flex-1"} onClick={() => clear()}>مسح السلة</Button>
       )}
     </div>
   );
