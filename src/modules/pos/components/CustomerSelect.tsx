@@ -1,19 +1,39 @@
 "use client";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { searchCustomers } from "@/modules/customers";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { searchCustomers, createCustomer } from "@/modules/customers";
 import { usePosStore } from "../store";
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/toast";
 import { Badge } from "@/components/ui/badge";
 import { formatMoney } from "@/lib/utils/money";
-import { ChevronDown, UserRound, X } from "lucide-react";
+import { ChevronDown, UserPlus, UserRound, X } from "lucide-react";
 
 /** Customer Selection — cmdk-in-popover over GET /customers (Customers facade only). */
 export function CustomerSelect() {
   const { customer, setCustomer } = usePosStore();
   const [open, setOpen] = useState(false);
   const [term, setTerm] = useState("");
+  const toast = useToast();
+  const qc = useQueryClient();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const create = useMutation({
+    mutationFn: () => createCustomer({ name: newName.trim(), phone: newPhone.trim(), creditLimit: "0", allergies: [] }),
+    onSuccess: ({ data }) => {
+      toast("success", `أُضيف العميل ${data.name}`);
+      setCustomer({ id: data.id, name: data.name, balance: data.balance ?? "0", creditLimit: data.creditLimit ?? "0", loyaltyPoints: 0 });
+      qc.invalidateQueries({ queryKey: ["customers.search"] });
+      setCreateOpen(false); setOpen(false); setNewName(""); setNewPhone(""); setTerm("");
+    },
+    onError: (e: Error) => toast("error", e.message),
+  });
+  const openCreate = () => { setNewName(term); setNewPhone(""); setCreateOpen(true); };
 
   const { data, isFetching } = useQuery({
     queryKey: ["customers.search", term],
@@ -33,6 +53,7 @@ export function CustomerSelect() {
         </span>
         <span className="flex shrink-0 items-center gap-2">
           <span className="num text-xs text-primary-ink/80">مديونية {formatMoney(customer.balance)}</span>
+          <span className="num text-xs text-primary-ink/80">· نقاط {customer.loyaltyPoints}</span>
           <button onClick={() => setCustomer(null)} aria-label="إزالة العميل" className="rounded p-1 text-primary-ink hover:bg-card">
             <X className="size-4" />
           </button>
@@ -61,7 +82,7 @@ export function CustomerSelect() {
                     key={c.id}
                     value={c.id}
                     onSelect={() => {
-                      setCustomer({ id: c.id, name: c.name, balance: c.balance, creditLimit: c.creditLimit });
+                      setCustomer({ id: c.id, name: c.name, balance: c.balance, creditLimit: c.creditLimit, loyaltyPoints: c.loyaltyPoints ?? 0 });
                       setOpen(false);
                       setTerm("");
                     }}
@@ -73,11 +94,31 @@ export function CustomerSelect() {
                     <span className="num text-xs text-ink-faint">{formatMoney(c.balance)}</span>
                   </CommandItem>
                 ))}
+                <button onClick={openCreate}
+                  className="flex w-full items-center gap-2 border-t border-line px-3 py-2.5 text-start text-sm font-bold text-primary-ink hover:bg-primary-soft">
+                  <UserPlus className="size-4" /> إضافة عميل جديد{term.trim() ? ` «${term.trim()}»` : ""}
+                </button>
               </>
             )}
           </CommandList>
         </Command>
       </PopoverContent>
+
+      {/* تسجيل عميل سريع — بلا مغادرة شاشة البيع */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>عميل جديد</DialogTitle></DialogHeader>
+          <DialogBody className="space-y-3">
+            <Input label="الاسم" value={newName} onChange={(e) => setNewName(e.target.value)} autoFocus />
+            <Input label="رقم الهاتف" inputMode="tel" dir="ltr" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} />
+            <p className="rounded-el bg-paper px-3 py-2 text-[11px] text-ink-faint">حد الائتمان صفر مبدئيًا — يُعدّل لاحقًا من صفحة العميل عند الحاجة للبيع الآجل.</p>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setCreateOpen(false)}>إلغاء</Button>
+            <Button loading={create.isPending} disabled={newName.trim().length < 2 || newPhone.trim().length < 6} onClick={() => create.mutate()}>حفظ واختيار</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Popover>
   );
 }

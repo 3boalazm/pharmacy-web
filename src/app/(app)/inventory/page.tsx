@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Topbar } from "@/components/layout/topbar";
 import { ProductsTable } from "@/modules/catalog";
-import { StockTable } from "@/modules/inventory";
+import { MovementsTable, ReorderTable, StockTable } from "@/modules/inventory";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
 import { PackageOpen, SlidersHorizontal } from "lucide-react";
@@ -12,6 +12,8 @@ const tabs = [
   { key: "stock", label: "مستويات المخزون" },
   { key: "products", label: "المنتجات" },
   { key: "expiry", label: "متابعة الصلاحية" },
+  { key: "movements", label: "الحركات" },
+  { key: "reorder", label: "اقتراح الشراء" },
 ] as const;
 type Tab = (typeof tabs)[number]["key"];
 
@@ -21,7 +23,7 @@ export default function InventoryPage() {
   return (
     <>
       <Topbar title="المخزون" />
-      <div className="space-y-4 p-6">
+      <div className="space-y-4 p-4 md:p-6">
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex rounded-el border border-line bg-card p-0.5">
             {tabs.map((t) => (
@@ -50,6 +52,8 @@ export default function InventoryPage() {
         {tab === "products" && <ProductsTable />}
         {tab === "stock" && <StockTable key="stock" />}
         {tab === "expiry" && <StockTable key="expiry" initialFilter="EXPIRING" />}
+        {tab === "movements" && <MovementsTable />}
+        {tab === "reorder" && <ReorderTable />}
       </div>
     </>
   );

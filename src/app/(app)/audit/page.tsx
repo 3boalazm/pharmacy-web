@@ -5,7 +5,7 @@ export default function AuditPage() {
   return (
     <>
       <Topbar title="سجل التدقيق" />
-      <div className="p-6"><AuditView /></div>
+      <div className="p-4 md:p-6"><AuditView /></div>
     </>
   );
 }

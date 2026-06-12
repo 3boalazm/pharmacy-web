@@ -45,7 +45,19 @@ export function CartPanel() {
                     <button onClick={() => setQty(l.medicine.id, l.quantity + 1)} className="grid size-8 place-items-center hover:bg-paper" aria-label="زيادة">
                       <Plus className="size-3.5" />
                     </button>
-                    <span className="num w-10 text-center text-sm font-bold">{l.quantity}</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={l.quantity}
+                      onChange={(e) => {
+                        const n = parseInt(e.target.value.replace(/\D/g, ""), 10);
+                        if (!Number.isNaN(n) && n > 0) setQty(l.medicine.id, n);
+                        else if (e.target.value === "") setQty(l.medicine.id, 1);
+                      }}
+                      onFocus={(e) => e.target.select()}
+                      className="num w-10 border-0 bg-transparent text-center text-sm font-bold focus:outline-none focus:ring-1 focus:ring-primary"
+                      aria-label="الكمية"
+                    />
                     <button onClick={() => setQty(l.medicine.id, l.quantity - 1)} className="grid size-8 place-items-center hover:bg-paper" aria-label="نقص">
                       <Minus className="size-3.5" />
                     </button>

@@ -1,5 +1,7 @@
 "use client";
 import { Sidebar } from "@/components/layout/sidebar";
+import { Onboarding } from "@/components/app/onboarding";
+import { MobileNav } from "@/components/layout/mobile-nav";
 import { AccountActions } from "@/modules/identity";
 import { getSession } from "@/lib/auth/session";
 import { useRouter } from "next/navigation";
@@ -15,8 +17,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!ready) return null;
   return (
     <div className="relative z-10 flex min-h-screen">
+      <Onboarding />
       <Sidebar />
-      <main className="min-w-0 flex-1">{children}</main>
+      <main className="min-w-0 flex-1 pb-20 lg:pb-0">{children}</main>
+      <MobileNav />
       <AccountActions />
     </div>
   );
