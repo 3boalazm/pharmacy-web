@@ -37,3 +37,7 @@ export async function importBaseCatalog() {
 export async function lookupByBarcode(code: string, signal?: AbortSignal) {
   return api<Medicine>(`/medicines/by-barcode/${encodeURIComponent(code.trim())}`, { signal });
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> d0ae0c678b55c38baf69e9a8e1f2e311703cbb1e

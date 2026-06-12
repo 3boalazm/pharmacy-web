@@ -47,8 +47,15 @@ export function SuccessDialog({ sale, onClose }: { sale: SaleResponse | null; on
         <DialogFooter>
           <Button variant="secondary" onClick={() => printArea("receipt")}><Printer className="size-4" /> طباعة إيصال</Button>
           <Button onClick={onClose}>بيع جديد</Button>
+<<<<<<< HEAD
+=======
+          <Button variant="secondary" onClick={() => window.open(sale.receipt.printPayloadUrl, "_blank")}>
+            <Printer className="size-4" /> طباعة الفاتورة
+          </Button>
+>>>>>>> d0ae0c678b55c38baf69e9a8e1f2e311703cbb1e
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+

@@ -1,6 +1,9 @@
 "use client";
 import { useState } from "react";
+<<<<<<< HEAD
 import { useMutation } from "@tanstack/react-query";
+=======
+>>>>>>> d0ae0c678b55c38baf69e9a8e1f2e311703cbb1e
 import { usePosStore, cartTotals, redeemValue } from "../store";
 import { TAX_EXEMPT_LABEL, TAX_LABEL, TAX_RATE } from "../tax";
 import { CustomerSelect } from "./CustomerSelect";

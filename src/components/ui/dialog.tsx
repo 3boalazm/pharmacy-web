@@ -18,6 +18,7 @@ export const DialogContent = React.forwardRef<
       ref={ref}
       dir="rtl"
       className={cn(
+<<<<<<< HEAD
         // موبايل: ورقة سفلية بعرض كامل · md+: متمركزة تمامًا (خصائص فيزيائية تعمل في RTL وLTR)
         "rise fixed z-50 bg-card shadow-pop focus:outline-none",
         "inset-x-0 bottom-0 w-full rounded-t-card border-t border-line",
@@ -25,6 +26,14 @@ export const DialogContent = React.forwardRef<
         "max-h-[90dvh] overflow-y-auto md:max-h-[calc(100dvh-2rem)]",
         className,
       )}
+=======
+          "rise fixed z-50 bg-card shadow-pop focus:outline-none",
+          "inset-x-0 bottom-0 w-full rounded-t-card border-t border-line",
+          "md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:w-[calc(100%-2rem)] md:max-w-md md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-card md:border",
+          "max-h-[90dvh] overflow-y-auto md:max-h-[calc(100dvh-2rem)]",
+          className,
+        )}
+>>>>>>> d0ae0c678b55c38baf69e9a8e1f2e311703cbb1e
       {...props}
     >
       {children}

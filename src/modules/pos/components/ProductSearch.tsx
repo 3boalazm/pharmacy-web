@@ -63,6 +63,11 @@ export function ProductSearch() {
       toast("error", "لا صنف بهذا الباركود");
     }
   }
+<<<<<<< HEAD
+=======
+    }
+  }
+>>>>>>> d0ae0c678b55c38baf69e9a8e1f2e311703cbb1e
 
   function pick(m: Medicine) {
     if ((m.stock?.onHand ?? 0) <= 0) {
