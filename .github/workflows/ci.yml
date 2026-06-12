@@ -1,0 +1,33 @@
+name: CI
+
+# يمنع وصول أي كود لا يبني إلى الإنتاج (Vercel) — سبب حوادث الشجرة المدموجة سابقًا
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npx next build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+
+      - name: Module boundaries
+        run: npx depcruise src --config .dependency-cruiser.cjs

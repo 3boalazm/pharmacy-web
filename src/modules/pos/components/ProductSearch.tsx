@@ -1,12 +1,13 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { searchMedicines, type Medicine } from "@/modules/catalog";
+import { searchMedicines, lookupByBarcode, type Medicine } from "@/modules/catalog";
 import { usePosStore } from "../store";
 import { BatchPeek } from "./BatchPeek";
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/components/ui/toast";
 import { formatMoney } from "@/lib/utils/money";
 import { ScanBarcode } from "lucide-react";
 
@@ -19,6 +20,7 @@ export function ProductSearch() {
   const [term, setTerm] = useState("");
   const add = usePosStore((s) => s.add);
   const inputRef = useRef<HTMLInputElement>(null);
+  const toast = useToast();
 
   const { data, isFetching } = useQuery({
     queryKey: ["medicines.search", term],
@@ -40,8 +42,33 @@ export function ProductSearch() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  /** قارئ USB يكتب الكود ثم Enter. مسار سريع: تطابق محلي فوري إن وُجد.
+   *  وإلا lookup مباشر بالباركود (يتفادى سباق نتائج البحث المؤجلة)، مع رسائل واضحة. */
+  async function onScanEnter(e: React.KeyboardEvent) {
+    if (e.key !== "Enter") return;
+    const code = term.trim();
+    if (code.length < 4) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    // مسار سريع: تطابق موجود في النتائج المحملة
+    const local = results.find((m) => m.barcode === code || m.internalCode.toUpperCase() === code.toUpperCase());
+    if (local) { pick(local); return; }
+
+    // lookup مباشر بالباركود — لا اعتماد على نتائج بحث قد لم تصل بعد
+    try {
+      const { data } = await lookupByBarcode(code);
+      pick(data);
+    } catch {
+      toast("error", "لا صنف بهذا الباركود");
+    }
+  }
+
   function pick(m: Medicine) {
-    if ((m.stock?.onHand ?? 0) <= 0) return;
+    if ((m.stock?.onHand ?? 0) <= 0) {
+      toast("error", `${m.tradeNameAr}: نفد المخزون`);
+      return;
+    }
     add(m);
     setTerm("");
     inputRef.current?.focus();
@@ -57,6 +84,7 @@ export function ProductSearch() {
             autoFocus
             value={term}
             onValueChange={setTerm}
+            onKeyDown={onScanEnter}
             placeholder="ابحث بالاسم أو الكود أو امسح الباركود…  ( / )"
           />
           <span className="absolute end-3 top-1/2 -translate-y-1/2 rounded-el bg-primary-soft p-1.5 text-primary-ink" title="جاهز للماسح الضوئي">
