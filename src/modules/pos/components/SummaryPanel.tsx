@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
 import { usePosStore, cartTotals, redeemValue } from "../store";
 import { TAX_EXEMPT_LABEL, TAX_LABEL, TAX_RATE } from "../tax";
 import { CustomerSelect } from "./CustomerSelect";

@@ -5,3 +5,4 @@ export * from "./types";
 export { SupplierDetail } from "./components/SupplierDetail";
 export { createSupplier } from "./api";
 export { SupplierIntelligence } from "./components/SupplierIntelligence";
+

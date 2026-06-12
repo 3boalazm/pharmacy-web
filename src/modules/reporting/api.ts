@@ -74,3 +74,4 @@ export interface StockoutRow { medicine: string; onHand: number; sold30: number;
 export async function getStockoutForecast(withinDays: number, signal?: AbortSignal) {
   return api<{ rows: StockoutRow[]; summary: { atRisk: number; withinDays: number } }>(`/analytics/stockout-forecast${qs({ withinDays })}`, { signal });
 }
+

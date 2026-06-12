@@ -69,8 +69,8 @@ body { @apply bg-paper text-ink antialiased; }
 
 *:focus-visible { outline: 2px solid rgb(var(--c-primary)); outline-offset: 2px; border-radius: 4px; }
 
-@keyframes rise { from { opacity: 0; } to { opacity: 1; } }
-.rise { animation: rise 0.2s ease-out both; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 
 /* ─── إيصال حراري 80mm (منطقة طباعة 72mm) ─── */
 .thermal-receipt { display: none; }
