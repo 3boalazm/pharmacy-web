@@ -43,7 +43,7 @@ export function ProductSearch() {
   }, []);
 
   /** قارئ USB يكتب الكود ثم Enter. مسار سريع: تطابق محلي فوري إن وُجد.
-   *  وإلا lookup مباشر بالباركود (يتفادى سباق نتائج البحث المؤجلة)، مع رسائل واضحة. */
+   * وإلا lookup مباشر بالباركود (يتفادى سباق نتائج البحث المؤجلة)، مع رسائل واضحة. */
   async function onScanEnter(e: React.KeyboardEvent) {
     if (e.key !== "Enter") return;
     const code = term.trim();
@@ -63,11 +63,6 @@ export function ProductSearch() {
       toast("error", "لا صنف بهذا الباركود");
     }
   }
-<<<<<<< HEAD
-=======
-    }
-  }
->>>>>>> d0ae0c678b55c38baf69e9a8e1f2e311703cbb1e
 
   function pick(m: Medicine) {
     if ((m.stock?.onHand ?? 0) <= 0) {
