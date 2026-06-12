@@ -18,15 +18,14 @@ export class ApiException extends Error {
   }
 }
 
-// التعديل لضمان التوافق مع بيئة المتصفح و Vercel
-const BASE = typeof window !== "undefined" ? "/api/v1" : (process.env.NEXT_PUBLIC_API_BASE_URL || "/api/v1");
+const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api/v1";
 
 interface Opts {
   method?: "GET" | "POST" | "PATCH";
   body?: unknown;
-  token?: string | null; 
+  token?: string | null;
   idempotencyKey?: string;
-  overrideToken?: string; 
+  overrideToken?: string;
   signal?: AbortSignal;
 }
 
