@@ -18,14 +18,15 @@ export class ApiException extends Error {
   }
 }
 
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api/v1";
+// التعديل لضمان التوافق مع بيئة المتصفح و Vercel
+const BASE = typeof window !== "undefined" ? "/api/v1" : (process.env.NEXT_PUBLIC_API_BASE_URL || "/api/v1");
 
 interface Opts {
   method?: "GET" | "POST" | "PATCH";
   body?: unknown;
-  token?: string | null; // override session token (customer portal uses its own)
+  token?: string | null; 
   idempotencyKey?: string;
-  overrideToken?: string; // manager/pharmacist override per Contract §0.4
+  overrideToken?: string; 
   signal?: AbortSignal;
 }
 
