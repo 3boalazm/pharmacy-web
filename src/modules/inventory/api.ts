@@ -9,12 +9,12 @@ export async function getStock(params: { search?: string; belowMin?: boolean; ex
 export async function getBatches(medicineId: string) {
   return api<Batch[]>(`/stock/${medicineId}/batches`);
 }
-export async function quarantineBatch(batchId: string, reason: string) {
-  return api(`/batches/${batchId}/quarantine`, { method: "POST", body: { reason } });
+export async function quarantineBatch(batchId: string, reason: string, idempotencyKey?: string) {
+  return api(`/batches/${batchId}/quarantine`, { method: "POST", idempotencyKey: idempotencyKey ?? uuidv7(), body: { reason } });
 }
 /** POST /inventory/grn — Idempotency-Key mandatory (Contract §0.5). */
-export async function createGrn(input: CreateGrnRequest) {
-  return api<GrnResponse>("/inventory/grn", { method: "POST", idempotencyKey: uuidv7(), body: input });
+export async function createGrn(input: CreateGrnRequest, idempotencyKey?: string) {
+  return api<GrnResponse>("/inventory/grn", { method: "POST", idempotencyKey: idempotencyKey ?? uuidv7(), body: input });
 }
 export async function getSuppliers(search?: string) {
   return api<Supplier[]>(`/suppliers${qs({ search })}`);
@@ -26,10 +26,10 @@ export async function createAdjustment(input: {
   quantity: number; // signed
   reason: "COUNT_CORRECTION" | "DAMAGE" | "EXPIRY_WRITE_OFF" | "THEFT" | "OTHER";
   note?: string;
-}) {
+}, idempotencyKey?: string) {
   return api<{ batchId: string; newQuantity: number; journalEntryId: string }>("/inventory/adjustments", {
     method: "POST",
-    idempotencyKey: uuidv7(),
+    idempotencyKey: idempotencyKey ?? uuidv7(),
     body: input,
   });
 }

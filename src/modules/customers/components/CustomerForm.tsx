@@ -10,6 +10,7 @@ import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTi
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useIntentKey } from "@/lib/hooks/use-intent-key";
 import { useToast } from "@/components/ui/toast";
 
 /** Customer CRUD form (create + edit) — RHF + Zod. Balance is intentionally absent: it is a ledger projection. */
@@ -21,6 +22,7 @@ export function CustomerForm({ open, onOpenChange, onSaved, customer }: {
 }) {
   const toast = useToast();
   const editing = !!customer;
+  const createIntent = useIntentKey();
 
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(zCustomerForm),
@@ -41,9 +43,13 @@ export function CustomerForm({ open, onOpenChange, onSaved, customer }: {
     mutationFn: (v: CustomerFormValues) => {
       const allergies = (v.allergies ?? "").split(/[,،]/).map((a) => a.trim()).filter(Boolean);
       const payload = { name: v.name, phone: v.phone, creditLimit: v.creditLimit, allergies };
-      return editing ? updateCustomer(customer!.id, payload) : createCustomer(payload);
+      return editing ? updateCustomer(customer!.id, payload) : createCustomer(payload, createIntent.key);
     },
-    onSuccess: () => { toast("success", editing ? "تم تحديث بيانات العميل" : "تمت إضافة العميل"); onSaved(); },
+    onSuccess: () => {
+      toast("success", editing ? "تم تحديث بيانات العميل" : "تمت إضافة العميل");
+      createIntent.reset();
+      onSaved();
+    },
     onError: (e: Error) => toast("error", e.message),
   });
 

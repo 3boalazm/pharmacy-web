@@ -5,6 +5,7 @@
 /* ─── Design System Tokens (single source of truth — per system design system) ───
    Primary green #16A34A · Cairo typeface · 8px spacing grid · radii 8/12px      */
 :root {
+  --font-cairo: "Cairo", system-ui, sans-serif;
   --c-primary: 22 163 74;
   --c-primary-ink: 12 94 43;
   --c-primary-soft: 232 247 238;
@@ -70,8 +71,6 @@ body { @apply bg-paper text-ink antialiased; }
 *:focus-visible { outline: 2px solid rgb(var(--c-primary)); outline-offset: 2px; border-radius: 4px; }
 
 
-@keyframes rise { from { opacity: 0; } to { opacity: 1; } }
-.rise { animation: rise 0.2s ease-out both; }
 
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .rise { animation: rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
@@ -98,6 +97,7 @@ body { @apply bg-paper text-ink antialiased; }
   body.printing-receipt .thermal-receipt .rc-row { display: flex; justify-content: space-between; }
   body.printing-receipt .thermal-receipt .rc-total { font-size: 14px; font-weight: 800; }
   body.printing-receipt .thermal-receipt .rc-foot { text-align: center; font-size: 10px; margin-top: 2mm; }
+  body.printing-receipt .thermal-receipt .rc-local-note { font-weight: 700; border: 1px dashed #000; padding: 1mm; margin-bottom: 1mm; }
   @page { margin: 0; }
 }
 
@@ -171,6 +171,8 @@ body.printing-statement .statement-print { display: block; }
 
 /* احترام تفضيل تقليل الحركة — إتاحة قبل الأناقة */
 @media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
   .scale-in, .slide-up, .skeleton, .hover-lift { animation: none !important; transition: none !important; }
   .hover-lift:hover { transform: none; }
 }
+

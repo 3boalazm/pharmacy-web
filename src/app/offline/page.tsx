@@ -1,3 +1,4 @@
+"use client";
 import { WifiOff } from "lucide-react";
 
 /** Precached offline fallback — shown only when a navigation has no network AND no cached copy. */
@@ -10,12 +11,16 @@ export default function OfflinePage() {
         </span>
         <h1 className="text-lg font-extrabold">لا يوجد اتصال بالإنترنت</h1>
         <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-          الشاشات التي فتحتها من قبل تعمل بدون نت، وعمليات البيع تُحفَظ في طابور آمن
-          وتُرحَّل تلقائيًا فور عودة الاتصال — لن تتكرر أي فاتورة.
+          قد تُفتح بعض الشاشات المحفوظة سابقًا للقراءة فقط، لكن <b>البيع معطّل بدون اتصال</b>:
+          لا يوجد طابور أوفلاين، ولن تُحفظ أي فاتورة قبل تأكيد الخادم. أعد الاتصال ثم أعد تحميل الصفحة.
         </p>
-        <a href="/pos" className="mt-5 inline-flex h-10 items-center justify-center rounded-el bg-primary px-5 text-sm font-bold text-white hover:bg-primary-ink">
-          فتح نقطة البيع
-        </a>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="mt-5 inline-flex h-10 items-center justify-center rounded-el bg-primary px-5 text-sm font-bold text-white hover:bg-primary-ink"
+        >
+          إعادة المحاولة
+        </button>
       </div>
     </div>
   );

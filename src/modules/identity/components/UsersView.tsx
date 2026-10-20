@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listUsers, createUser, updateUser, type ManagedUser } from "../api";
+import { useIntentKey } from "@/lib/hooks/use-intent-key";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,11 +43,13 @@ export function UsersView() {
     resolver: zodResolver(createSchema),
     defaultValues: { name: "", phone: "", password: "", role: "CASHIER", pin: "" },
   });
+  const createIntent = useIntentKey();
   const create = useMutation({
     mutationFn: (v: CreateValues) =>
-      createUser({ ...v, pin: v.pin || undefined }),
+      createUser({ ...v, pin: v.pin || undefined }, createIntent.key),
     onSuccess: () => {
       toast("success", "تم إنشاء الحساب");
+      createIntent.reset();
       form.reset(); setAddOpen(false);
       qc.invalidateQueries({ queryKey: ["users"] });
     },

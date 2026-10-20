@@ -3,9 +3,16 @@ const XLSX = require("xlsx");
 const { OpenAI } = require("openai");
 require("dotenv").config();
 
-const INPUT_FILE = "الاصناف.xlsx";
-const OUTPUT_FILE = "الاصناف_المعدلة.xlsx";
+// ملفات البيانات لم تعد تُخزَّن في الريبو (بيانات تجارية). مرّر مسارات خارجية:
+//   INPUT_FILE=../pharmacy-data/الاصناف.xlsx OUTPUT_FILE=../pharmacy-data/الاصناف_المعدلة.xlsx node parse-drugs.js
+const INPUT_FILE = process.env.INPUT_FILE;
+const OUTPUT_FILE = process.env.OUTPUT_FILE ?? "الاصناف_المعدلة.xlsx";
 const BATCH_SIZE = 20;
+
+if (!INPUT_FILE || !fs.existsSync(INPUT_FILE)) {
+  console.error("ERROR: INPUT_FILE is not set or does not exist. Example: INPUT_FILE=../pharmacy-data/الاصناف.xlsx");
+  process.exit(1);
+}
 
 const apiKey = process.env.OPENAI_API_KEY;
 if (!apiKey) {
@@ -52,9 +59,9 @@ async function parseWorkbook() {
     process.exit(1);
   }
 
-  const workbook = XLSX.readFile(INPUT_FILE);
-  const sheetName = workbook.SheetNames[0];
-  const rawRows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "" });
+  const sourceWorkbook = XLSX.readFile(INPUT_FILE);
+  const sheetName = sourceWorkbook.SheetNames[0];
+  const rawRows = XLSX.utils.sheet_to_json(sourceWorkbook.Sheets[sheetName], { defval: "" });
   const items = rawRows
     .map((row) => ({
       original_name: String(row["اسم الصنف"] || row["الاسم التجاري"] || "").trim(),

@@ -13,6 +13,7 @@ import { useToast } from "@/components/ui/toast";
 import { Table, THead, Th, Tr, Td } from "@/components/ui/table";
 import { Plus, Trash2, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useIntentKey } from "@/lib/hooks/use-intent-key";
 
 /**
  * GRN — استلام شحنة (Contract §4). Posting creates batches + inventory transactions
@@ -21,6 +22,9 @@ import { useRouter } from "next/navigation";
 export function GrnForm() {
   const toast = useToast();
   const router = useRouter();
+  const intent = useIntentKey();
+  const supplierIntent = useIntentKey();
+  const todayISO = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; })();
   const [supplierId, setSupplierId] = useState("");
   const [invoiceNo, setInvoiceNo] = useState("");
   const [paymentTerms, setPaymentTerms] = useState<"CASH" | "CREDIT">("CREDIT");
@@ -33,11 +37,12 @@ export function GrnForm() {
   const [supName, setSupName] = useState("");
   const [supPhone, setSupPhone] = useState("");
   const createSup = useMutation({
-    mutationFn: () => createSupplier({ name: supName.trim(), phone: supPhone.trim() || undefined }),
+    mutationFn: () => createSupplier({ name: supName.trim(), phone: supPhone.trim() || undefined }, supplierIntent.key),
     onSuccess: ({ data }) => {
       toast("success", `أُضيف المورد ${data.name}`);
       setSupplierId(data.id);
       qc.invalidateQueries({ queryKey: ["suppliers"] });
+      supplierIntent.reset();
       setSupOpen(false); setSupName(""); setSupPhone("");
     },
     onError: (e: Error) => toast("error", e.message),
@@ -57,15 +62,17 @@ export function GrnForm() {
         receivedAt: new Date().toISOString(),
         paymentTerms,
         lines: lines.map(({ nameAr: _omit, ...l }) => l),
-      }),
+      }, intent.key),
     onSuccess: ({ data }) => {
       toast("success", `تم ترحيل الاستلام — قيد محاسبي ${data.journalEntryId.slice(0, 8)}`);
+      intent.reset();
       router.push("/inventory");
     },
     onError: (e: Error) => toast("error", e.message),
   });
 
-  const valid = supplierId && invoiceNo && lines.length > 0 &&
+  const hasPastExpiry = lines.some((l) => !!l.expiryDate && l.expiryDate < todayISO);
+  const valid = supplierId && invoiceNo && lines.length > 0 && !hasPastExpiry &&
     lines.every((l) => l.batchNumber && l.expiryDate && l.quantity > 0 && Number(l.unitCost) > 0);
 
   function patch(i: number, p: Partial<GrnLineInput>) {
@@ -147,7 +154,7 @@ export function GrnForm() {
                 <Tr key={i}>
                   <Td className="font-bold">{l.nameAr}</Td>
                   <Td><input value={l.batchNumber} onChange={(e) => patch(i, { batchNumber: e.target.value })} dir="ltr" className="h-9 w-28 rounded-el border border-line px-2 text-end text-xs font-mono" /></Td>
-                  <Td><input type="date" value={l.expiryDate} onChange={(e) => patch(i, { expiryDate: e.target.value })} className="h-9 rounded-el border border-line px-2 text-xs" /></Td>
+                  <Td><input type="date" min={todayISO} value={l.expiryDate} onChange={(e) => patch(i, { expiryDate: e.target.value })} className="h-9 rounded-el border border-line px-2 text-xs" /></Td>
                   <Td><input type="number" min={1} value={l.quantity} onChange={(e) => patch(i, { quantity: Number(e.target.value) })} className="num h-9 w-20 rounded-el border border-line px-2 text-center text-sm" /></Td>
                   <Td><input type="number" min={0} value={l.bonusQuantity ?? 0} onChange={(e) => patch(i, { bonusQuantity: Number(e.target.value) })} className="num h-9 w-16 rounded-el border border-line px-2 text-center text-sm" /></Td>
                   <Td><input inputMode="decimal" value={l.unitCost} onChange={(e) => patch(i, { unitCost: e.target.value })} dir="ltr" className="num h-9 w-24 rounded-el border border-line px-2 text-end text-sm" /></Td>
@@ -159,6 +166,11 @@ export function GrnForm() {
         )}
       </Card>
 
+      {hasPastExpiry && (
+        <p role="alert" className="rounded-el border border-danger/30 bg-danger-soft px-3 py-2 text-xs font-bold text-danger">
+          يوجد سطر بتاريخ صلاحية ماضٍ — لا يمكن ترحيل استلام مخزون منتهي. صحّح التاريخ أولًا.
+        </p>
+      )}
       <div className="flex justify-end gap-2">
         <Button variant="secondary" onClick={() => router.push("/inventory")}>إلغاء</Button>
         <Button size="lg" disabled={!valid} loading={post.isPending} onClick={() => post.mutate()}>

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -18,6 +18,7 @@ import { formatMoney } from "@/lib/utils/money";
 import { ApiException } from "@/lib/api/http";
 import { cn } from "@/lib/utils/cn";
 import { ChevronDown } from "lucide-react";
+import { useIntentKey } from "@/lib/hooks/use-intent-key";
 
 /**
  * Stock Adjustments (WF-4): count correction / damage / expiry write-off / theft.
@@ -36,6 +37,9 @@ export function AdjustmentForm() {
   });
   const medicineId = form.watch("medicineId");
   const direction = form.watch("direction");
+  const batchId = form.watch("batchId");
+  const intent = useIntentKey();
+  const [ackRiskyBatch, setAckRiskyBatch] = useState(false);
 
   const meds = useQuery({
     queryKey: ["medicines.search", medTerm],
@@ -49,6 +53,11 @@ export function AdjustmentForm() {
     enabled: !!medicineId,
     select: (r) => r.data.filter((b) => b.status === "ACTIVE" || b.status === "EXPIRED" || b.status === "QUARANTINED"),
   });
+  const selectedBatch = batches.data?.find((b) => b.id === batchId);
+  const riskyBatch = !!selectedBatch && selectedBatch.status !== "ACTIVE";
+
+  // تغيير التشغيلة يعني تأكيدًا جديدًا
+  useEffect(() => { setAckRiskyBatch(false); }, [batchId]);
 
   const adjust = useMutation({
     mutationFn: (v: AdjustFormValues) =>
@@ -57,9 +66,11 @@ export function AdjustmentForm() {
         quantity: v.direction === "REMOVE" ? -v.quantity : v.quantity,
         reason: v.reason,
         note: v.note || undefined,
-      }),
+      }, intent.key),
     onSuccess: ({ data }) => {
       setResult(data);
+      intent.reset();
+      setAckRiskyBatch(false);
       toast("success", "تم ترحيل التسوية بقيد محاسبي");
       form.reset({ medicineId: "", batchId: "", direction: "REMOVE", quantity: 1, reason: "COUNT_CORRECTION", note: "" });
       setMedicineName("");
@@ -157,6 +168,24 @@ export function AdjustmentForm() {
               </FormItem>
             )} />
 
+            {riskyBatch && (
+              <label className={cn(
+                "flex cursor-pointer items-start gap-2 rounded-el border px-3 py-2 text-xs font-medium",
+                selectedBatch?.status === "QUARANTINED" ? "border-warn/40 bg-warn-soft text-warn" : "border-danger/40 bg-danger-soft text-danger",
+              )}>
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={ackRiskyBatch}
+                  onChange={(e) => setAckRiskyBatch(e.target.checked)}
+                />
+                <span>
+                  هذه التشغيلة {selectedBatch?.status === "QUARANTINED" ? "محجورة" : "منتهية الصلاحية"} — التسوية عليها إتلاف/جرد استثنائي.
+                  أؤكد أنني أراجع الكمية والسبب قبل الترحيل.
+                </span>
+              </label>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="direction" render={({ field }) => (
                 <FormItem>
@@ -203,7 +232,7 @@ export function AdjustmentForm() {
                 : "سيُرحَّل قيد: مدين «المخزون» / دائن «عجز/زيادة» بقيمة التكلفة."}
             </p>
 
-            <Button type="submit" size="lg" className="w-full" loading={adjust.isPending}>ترحيل التسوية</Button>
+            <Button type="submit" size="lg" className="w-full" loading={adjust.isPending} disabled={riskyBatch && !ackRiskyBatch}>ترحيل التسوية</Button>
           </form>
         </Form>
       </Card>

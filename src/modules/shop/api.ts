@@ -1,5 +1,6 @@
 "use client";
 import { api, qs } from "@/lib/api/http";
+import { uuidv7 } from "@/lib/utils/uuid";
 import { getPortalSession } from "@/lib/shop/session";
 import type { Money } from "@/lib/utils/money";
 
@@ -36,8 +37,8 @@ export async function shopCatalog(search?: string, signal?: AbortSignal) {
 export async function placeOrder(input: {
   lines: { medicineId: string; quantity: number }[];
   fulfillment: "PICKUP" | "DELIVERY"; address?: string; note?: string;
-}) {
-  return api<PortalOrder>("/shop/orders", { method: "POST", body: input, token: t() });
+}, idempotencyKey?: string) {
+  return api<PortalOrder>("/shop/orders", { method: "POST", idempotencyKey: idempotencyKey ?? uuidv7(), body: input, token: t() });
 }
 export async function myOrders(signal?: AbortSignal) {
   return api<PortalOrder[]>("/shop/orders", { token: t(), signal });

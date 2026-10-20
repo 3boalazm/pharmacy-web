@@ -11,6 +11,8 @@ export interface ReceiptData {
   discount: string;
   total: string;
   splits?: { method: "CASH" | "CARD" | "CREDIT"; amount: string }[];
+  /** true = البيانات مأخوذة من فاتورة الخادم النهائية؛ false = نسخة محلية (تعذر الجلب). */
+  verified?: boolean;
 }
 
 const PAY_AR = { CASH: "نقدي", CARD: "بطاقة", CREDIT: "آجل — على الحساب", SPLIT: "مقسّم" } as const;
@@ -21,9 +23,9 @@ export function Receipt({ data }: { data: ReceiptData }) {
   return (
     <div className="thermal-receipt" dir="rtl">
       <header>
-        <h1>{pharmacy ?? "الصيدلية"}</h1>
-        <p>فاتورة بيع · رقم {data.invoiceNo}</p>
-        <p className="num">{new Date(data.createdAt).toLocaleString("ar-EG", { dateStyle: "short", timeStyle: "short" })}</p>
+        <h1 className="rc-title">{pharmacy ?? "الصيدلية"}</h1>
+        <p className="rc-meta">فاتورة بيع · رقم <span className="num">{data.invoiceNo}</span></p>
+        <p className="rc-meta num">{new Date(data.createdAt).toLocaleString("ar-EG", { dateStyle: "short", timeStyle: "short" })}</p>
         {data.customerName && <p>العميل: {data.customerName}</p>}
       </header>
       <table>
@@ -41,11 +43,12 @@ export function Receipt({ data }: { data: ReceiptData }) {
           ))}
         </tbody>
       </table>
+      <hr />
       <section className="totals">
-        <p><span>الإجمالي قبل الخصم</span><b className="num">{Number(data.subtotal).toFixed(2)}</b></p>
-        {Number(data.discount) > 0 && <p><span>الخصم</span><b className="num">-{Number(data.discount).toFixed(2)}</b></p>}
-        <p className="grand"><span>المطلوب</span><b className="num">{Number(data.total).toFixed(2)} ج.م</b></p>
-        <p><span>طريقة الدفع</span><b>{PAY_AR[data.paymentMethod]}</b></p>
+        <p className="rc-row"><span>الإجمالي قبل الخصم</span><b className="num">{Number(data.subtotal).toFixed(2)}</b></p>
+        {Number(data.discount) > 0 && <p className="rc-row"><span>الخصم</span><b className="num">-{Number(data.discount).toFixed(2)}</b></p>}
+        <p className="rc-row grand rc-total"><span>المطلوب</span><b className="num">{Number(data.total).toFixed(2)} ج.م</b></p>
+        <p className="rc-row"><span>طريقة الدفع</span><b>{PAY_AR[data.paymentMethod]}</b></p>
       {data.splits && data.splits.length > 0 && (
         <div style={{ marginTop: 2 }}>
           {data.splits.map((sp, i) => (
@@ -57,7 +60,11 @@ export function Receipt({ data }: { data: ReceiptData }) {
         </div>
       )}
       </section>
-      <footer>
+      <hr />
+      <footer className="rc-foot">
+        {data.verified === false && (
+          <p className="rc-local-note">نسخة محلية غير مصدَّقة — راجع الفاتورة على النظام</p>
+        )}
         <p>شكرًا لزيارتكم — نتمنى لكم الشفاء العاجل</p>
       </footer>
     </div>

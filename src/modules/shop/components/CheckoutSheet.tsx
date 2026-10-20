@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { placeOrder } from "../api";
+import { useIntentKey } from "@/lib/hooks/use-intent-key";
 import { useCart, cartTotal } from "../cart";
 import { getPortalSession } from "@/lib/shop/session";
 import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -18,6 +19,7 @@ import { Store, Bike } from "lucide-react";
 export function CheckoutSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const router = useRouter();
   const toast = useToast();
+  const intent = useIntentKey();
   const cart = useCart();
   const [fulfillment, setFulfillment] = useState<"PICKUP" | "DELIVERY">("PICKUP");
   const [address, setAddress] = useState("");
@@ -30,9 +32,10 @@ export function CheckoutSheet({ open, onOpenChange }: { open: boolean; onOpenCha
         fulfillment,
         address: fulfillment === "DELIVERY" ? address : undefined,
         note: note || undefined,
-      }),
+      }, intent.key),
     onSuccess: () => {
       cart.clear();
+      intent.reset();
       onOpenChange(false);
       toast("success", "تم إرسال طلبك للصيدلية — تابع حالته من «طلباتي»");
       router.push("/shop/orders");

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, qs } from "@/lib/api/http";
-import { uuidv7 } from "@/lib/utils/uuid";
+import { useIntentKey } from "@/lib/hooks/use-intent-key";
 import type { Money } from "@/lib/utils/money";
 import { formatMoney } from "@/lib/utils/money";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -37,15 +37,18 @@ export function TreasuryCard() {
     queryFn: async ({ signal }) => (await api<CashStatement>(`/finance/treasury${qs({})}`, { signal })).data,
   });
 
+  const intent = useIntentKey();
+
   const submit = useMutation({
     mutationFn: () =>
       api(`/finance/treasury/entries`, {
-        method: "POST", idempotencyKey: uuidv7(),
+        method: "POST", idempotencyKey: intent.key,
         body: { type: open, amount, description, category: category || undefined },
       }),
     onSuccess: () => {
       toast("success", open === "EXPENSE" ? "تم تسجيل المصروف وخصمه من الخزينة" : "تم تسجيل الإيراد وإضافته للخزينة");
       setOpen(null); setAmount(""); setDescription(""); setCategory("");
+      intent.reset();
       qc.invalidateQueries({ queryKey: ["treasury"] });
     },
     onError: (e: Error) => toast("error", e.message),

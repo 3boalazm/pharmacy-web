@@ -10,18 +10,24 @@ export async function searchCustomers(params: { search?: string; hasDebt?: boole
 export async function getCustomer(id: string) {
   return api<Customer>(`/customers/${id}`);
 }
-export async function createCustomer(input: { name: string; phone: string; creditLimit: Money; allergies: string[] }) {
-  return api<Customer>("/customers", { method: "POST", body: input });
+export async function createCustomer(
+  input: { name: string; phone: string; creditLimit: Money; allergies: string[] },
+  idempotencyKey?: string,
+) {
+  return api<Customer>("/customers", { method: "POST", idempotencyKey: idempotencyKey ?? uuidv7(), body: input });
 }
 /** كشف حساب العميل — GET /finance/ar/:id/statement (the flagship screen). */
 export async function getStatement(customerId: string, range?: { from?: string; to?: string }) {
   return api<Statement>(`/finance/ar/${customerId}/statement${qs(range ?? {})}`);
 }
 /** تسجيل دفعة — POST /finance/payments (Idempotency-Key mandatory). */
-export async function recordPayment(input: { customerId: string; amount: Money; method: "CASH" | "CARD"; allocateTo: "OLDEST" }) {
+export async function recordPayment(
+  input: { customerId: string; amount: Money; method: "CASH" | "CARD"; allocateTo: "OLDEST" },
+  idempotencyKey?: string,
+) {
   return api<{ paymentId: string; customerBalanceAfter: Money }>("/finance/payments", {
     method: "POST",
-    idempotencyKey: uuidv7(),
+    idempotencyKey: idempotencyKey ?? uuidv7(),
     body: input,
   });
 }

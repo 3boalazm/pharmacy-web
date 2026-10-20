@@ -1,0 +1,29 @@
+{
+  "$comment": "استثناءات مؤقتة لبوابة npm audit. كل استثناء يحتاج سببًا وتاريخ انتهاء؛ عند الانتهاء تفشل البوابة حتى يُعالج أو يُجدَّد consciously.",
+  "allow": [
+    {
+      "package": "next",
+      "severity": "critical",
+      "reason": "الإصلاح يتطلب Next 16 (قفزة كبرى + RSC). مرصود في audit/pharmacy-web-audit.md §16.2؛ يُعالج في دورة ترقية مجدولة مع اختبار انحدار.",
+      "expires": "2027-03-31"
+    },
+    {
+      "package": "postcss",
+      "severity": "high",
+      "reason": "نسخة متداخلة داخل next؛ تزول تلقائيًا مع ترقية Next. لا تُستدعى من كود الإنتاج مباشرة.",
+      "expires": "2027-03-31"
+    },
+    {
+      "package": "source-map-js",
+      "severity": "high",
+      "reason": "تبعية عابرة لأدوات البناء؛ لا تُحمَّل في حزمة المتصفح وقت التشغيل.",
+      "expires": "2027-03-31"
+    },
+    {
+      "package": "nanoid",
+      "severity": "high",
+      "reason": "تبعية عابرة (عبر postcss/next). تُزال مع ترقية Next.",
+      "expires": "2027-03-31"
+    }
+  ]
+}

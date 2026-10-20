@@ -24,6 +24,18 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
+      - name: Lint
+        run: npx next lint
+
+      - name: Unit tests
+        run: npx vitest run
+
+      - name: Secret scan
+        run: node scripts/check-secrets.mjs
+
+      - name: Dependency audit gate (production)
+        run: node scripts/audit-gate.mjs
+
       - name: Build
         run: npx next build
         env:

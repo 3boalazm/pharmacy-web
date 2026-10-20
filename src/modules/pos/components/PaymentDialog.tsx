@@ -236,7 +236,7 @@ export function PaymentDialog({
 
               <Separator />
               <p className="text-[11px] text-ink-faint">
-                يُرسل الطلب بمفتاح Idempotency فريد — إعادة المحاولة عند انقطاع الاتصال لا تكرر الفاتورة أبداً.
+                نفس السلة = نفس مفتاح العملية — إعادة المحاولة بعد انقطاع الاتصال لا تكرر الفاتورة. لا يتم حفظ أي بيع مؤجل بدون اتصال.
               </p>
             </DialogBody>
             <DialogFooter>

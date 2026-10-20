@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/badge";
 import { formatMoney } from "@/lib/utils/money";
 import { Layers } from "lucide-react";
+import { hasRole } from "@/lib/auth/session";
 
 /**
  * Batch Selection (FEFO preview) — GET /stock/:medicineId/batches.
@@ -15,6 +16,7 @@ import { Layers } from "lucide-react";
  */
 export function BatchPeek({ medicineId, nameAr }: { medicineId: string; nameAr: string }) {
   const [open, setOpen] = useState(false);
+  const canSeeCost = hasRole(["PHARMACIST"]);
   const { data, isLoading } = useQuery({
     queryKey: ["batches", medicineId],
     queryFn: () => getBatches(medicineId),
@@ -48,7 +50,7 @@ export function BatchPeek({ medicineId, nameAr }: { medicineId: string; nameAr: 
                 <span className="flex items-center gap-3 text-ink-soft">
                   <span className="num">{new Date(b.expiryDate).toLocaleDateString("ar-EG")}</span>
                   <b className="num text-ink">{b.quantity}</b>
-                  <span className="num">{formatMoney(b.unitCost)}</span>
+                  {canSeeCost && <span className="num">{formatMoney(b.unitCost)}</span>}
                 </span>
               </li>
             ))}

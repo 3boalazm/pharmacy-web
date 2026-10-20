@@ -23,6 +23,7 @@ import { Statement } from "@/components/print/Statement";
 import { printArea } from "@/lib/utils/print";
 import { updateCustomer } from "../api";
 import { Input as TextInput } from "@/components/ui/input";
+import { useIntentKey } from "@/lib/hooks/use-intent-key";
 
 /**
  * Customer 360: Credit Balance KPIs (ledger projections) · Ledger View (كشف حساب —
@@ -50,6 +51,8 @@ export function CustomerDetail({ customerId }: { customerId: string }) {
     onError: (e: Error) => toast("error", e.message),
   });
   const [amount, setAmount] = useState("");
+  const [payMethod, setPayMethod] = useState<"CASH" | "CARD">("CASH");
+  const payIntent = useIntentKey();
   const [stFrom, setStFrom] = useState("");
   const [stTo, setStTo] = useState("");
 
@@ -62,10 +65,11 @@ export function CustomerDetail({ customerId }: { customerId: string }) {
   });
 
   const pay = useMutation({
-    mutationFn: () => recordPayment({ customerId, amount: Number(amount).toFixed(4), method: "CASH", allocateTo: "OLDEST" }),
+    mutationFn: () => recordPayment({ customerId, amount: Number(amount).toFixed(4), method: payMethod, allocateTo: "OLDEST" }, payIntent.key),
     onSuccess: ({ data }) => {
       toast("success", `تم تسجيل الدفعة — الرصيد الجديد ${formatMoney(data.customerBalanceAfter)}`);
-      setPayOpen(false); setAmount("");
+      setPayOpen(false); setAmount(""); setPayMethod("CASH");
+      payIntent.reset();
       qc.invalidateQueries({ queryKey: ["customer", customerId] });
       qc.invalidateQueries({ queryKey: ["statement", customerId] });
     },
@@ -211,6 +215,24 @@ export function CustomerDetail({ customerId }: { customerId: string }) {
           <DialogHeader><DialogTitle>تسجيل دفعة — {c.name}</DialogTitle></DialogHeader>
           <DialogBody className="space-y-3">
             <Input label="المبلغ (ج.م)" inputMode="decimal" dir="ltr" className="num text-end" value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus />
+            <div>
+              <p className="mb-1.5 text-sm font-medium text-ink-soft">طريقة السداد</p>
+              <div className="grid grid-cols-2 gap-2">
+                {(["CASH", "CARD"] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setPayMethod(m)}
+                    className={cn(
+                      "rounded-el border px-3 py-2 text-sm font-bold transition-colors",
+                      payMethod === m ? "border-primary bg-primary-soft text-primary-ink" : "border-line text-ink-soft hover:bg-paper",
+                    )}
+                  >
+                    {m === "CASH" ? "نقدي" : "بطاقة"}
+                  </button>
+                ))}
+              </div>
+            </div>
             <p className="rounded-el bg-info-soft px-3 py-2 text-xs text-info">
               ستُخصم الدفعة من أقدم مديونية أولاً، وتُسجَّل كقيد مزدوج غير قابل للتعديل.
             </p>

@@ -49,8 +49,16 @@ export function SuccessDialog({ sale, onClose }: { sale: SaleResponse | null; on
           <Button onClick={onClose}>بيع جديد</Button>
 
 
-          <Button variant="secondary" onClick={() => window.open(sale.receipt.printPayloadUrl, "_blank")}>
-            <Printer className="size-4" /> طباعة الفاتورة
+          <Button
+            variant="secondary"
+            onClick={() => {
+              const url = sale.receipt.printPayloadUrl;
+              // روابط الخادم فقط — بلا javascript: أو فتح بلا عزل
+              if (!/^(https?:\/\/|\/)/i.test(url)) return;
+              window.open(url, "_blank", "noopener,noreferrer");
+            }}
+          >
+            <Printer className="size-4" /> نسخة الخادم
           </Button>
 
         </DialogFooter>

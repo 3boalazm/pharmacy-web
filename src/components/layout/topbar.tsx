@@ -4,9 +4,9 @@ import { Bell, LogOut, Menu, X, Cross } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/http";
-import { getSession, clearSession } from "@/lib/auth/session";
+import { broadcastLogout, clearClientState, getSession } from "@/lib/auth/session";
 import { navForRole } from "@/lib/nav";
 import { ThemeToggle } from "@/components/app/theme";
 import { cn } from "@/lib/utils/cn";
@@ -21,6 +21,7 @@ const roleAr: Record<string, string> = {
 /** جرس التنبيهات الآن حقيقي: عدّاد غير المقروء + الضغط يفتح /alerts مع قائمة جانبية للموبايل. */
 export function Topbar({ title }: { title: string }) {
   const router = useRouter();
+  const qc = useQueryClient();
   const [menuOpen, setMenuOpen] = useState(false);
   const session = typeof window !== "undefined" ? getSession() : null;
   const items = session ? navForRole(session.user.role) : [];
@@ -84,7 +85,7 @@ export function Topbar({ title }: { title: string }) {
 
           <button
             aria-label="تسجيل الخروج"
-            onClick={() => { clearSession(); router.push("/login"); }}
+            onClick={() => { broadcastLogout(); clearClientState(); qc.clear(); router.replace("/login"); }}
             className="rounded-el p-2 text-ink-soft hover:bg-danger-soft hover:text-danger"
           >
             <LogOut className="size-5" />
