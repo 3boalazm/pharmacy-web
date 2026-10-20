@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getDailyReconciliation, closePeriod } from "../api";
+import { useIntentKey } from "@/lib/hooks/use-intent-key";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,9 +24,10 @@ export function FinanceView() {
     select: (r) => r.data,
   });
 
+  const closeIntent = useIntentKey();
   const close = useMutation({
-    mutationFn: closePeriod,
-    onSuccess: ({ data }) => { toast("success", `أُقفلت الفترة ${data.closed} — لا قيود جديدة فيها`); setConfirmMonth(null); },
+    mutationFn: (month: string) => closePeriod(month, closeIntent.key),
+    onSuccess: ({ data }) => { toast("success", `أُقفلت الفترة ${data.closed} — لا قيود جديدة فيها`); closeIntent.reset(); setConfirmMonth(null); },
     onError: (e: unknown) => {
       toast("error", e instanceof ApiException ? e.error.message : "تعذر إقفال الفترة");
     },

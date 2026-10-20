@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { listSuppliers, createSupplier } from "../api";
+import { useIntentKey } from "@/lib/hooks/use-intent-key";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,9 +51,10 @@ export function SuppliersView() {
   });
 
   const form = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: { name: "", phone: "" } });
+  const createIntent = useIntentKey();
   const create = useMutation({
-    mutationFn: (v: FormValues) => createSupplier({ name: v.name, phone: v.phone || undefined }),
-    onSuccess: () => { toast("success", "تمت إضافة المورد"); form.reset(); setOpen(false); refetch(); },
+    mutationFn: (v: FormValues) => createSupplier({ name: v.name, phone: v.phone || undefined }, createIntent.key),
+    onSuccess: () => { toast("success", "تمت إضافة المورد"); createIntent.reset(); form.reset(); setOpen(false); refetch(); },
     onError: (e: Error) => toast("error", e.message),
   });
 

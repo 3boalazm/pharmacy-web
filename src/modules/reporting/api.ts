@@ -1,5 +1,6 @@
 "use client";
 import { api, qs } from "@/lib/api/http";
+import { toCsv } from "@/lib/utils/csv";
 import type { Money } from "@/lib/utils/money";
 
 export interface ReportSummary {
@@ -19,9 +20,9 @@ export async function reportTop(p: { from?: string; to?: string }, signal?: Abor
   return api<TopMedicine[]>(`/reports/top-medicines${qs(p)}`, { signal });
 }
 
-/** تصدير CSV عربي-سليم (BOM لإكسل). */
+/** تصدير CSV عربي-سليم (BOM لإكسل) مع حماية من صيغ Excel. */
 export function downloadCsv(filename: string, headers: string[], rows: (string | number)[][]) {
-  const csv = "\uFEFF" + [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const csv = toCsv(headers, rows);
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
   const a = document.createElement("a");
   a.href = url; a.download = filename; a.click();

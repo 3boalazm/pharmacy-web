@@ -13,6 +13,7 @@ import { useToast } from "@/components/ui/toast";
 import { formatMoney } from "@/lib/utils/money";
 import { hasRole } from "@/lib/auth/session";
 import { cn } from "@/lib/utils/cn";
+import { useIntentKey } from "@/lib/hooks/use-intent-key";
 import { Banknote, Landmark, MinusCircle, PlusCircle, Undo2 } from "lucide-react";
 
 const TYPE_META: Record<string, { label: string; tone: "red" | "green" | "blue" | "gray"; sign: "-" | "+" }> = {
@@ -48,18 +49,22 @@ export function CashboxView() {
     qc.invalidateQueries({ queryKey: ["shift"] }); // الدرج يتأثر بحركات الخزينة
   };
 
+  const entryIntent = useIntentKey();
+  const reverseIntent = useIntentKey();
+
   const create = useMutation({
-    mutationFn: () => createCashEntry({ type: dialog!, amount, memo, categoryId: categoryId || undefined }),
+    mutationFn: () => createCashEntry({ type: dialog!, amount, memo, categoryId: categoryId || undefined }, entryIntent.key),
     onSuccess: () => {
       toast("success", "سُجِّلت الحركة وقُيِّدت دفتريًا");
       setDialog(null); setAmount(""); setMemo(""); setCategoryId("");
+      entryIntent.reset();
       refresh();
     },
     onError: (e: Error) => toast("error", e.message),
   });
   const reverse = useMutation({
-    mutationFn: (id: string) => reverseCashEntry(id),
-    onSuccess: () => { toast("success", "عُكست الحركة بقيد مرتبط"); refresh(); },
+    mutationFn: (id: string) => reverseCashEntry(id, undefined, reverseIntent.key),
+    onSuccess: () => { toast("success", "عُكست الحركة بقيد مرتبط"); reverseIntent.reset(); refresh(); },
     onError: (e: Error) => toast("error", e.message),
   });
 

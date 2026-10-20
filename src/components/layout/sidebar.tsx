@@ -157,12 +157,14 @@ export function Sidebar() {
                   const active = isActive(href);
                   return (
                     <Link key={href} href={href} title={rail ? label : undefined}
+                      aria-current={active ? "page" : undefined}
+                      aria-label={rail ? label : undefined}
                       className={cn(
                         "flex items-center rounded-el text-sm font-medium transition-colors",
                         rail ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
                         active ? "glow-soft bg-primary-soft font-bold text-primary-ink" : "text-ink-soft hover:bg-paper",
                       )}>
-                      <Icon className="size-[18px] shrink-0" />
+                      <Icon className="size-[18px] shrink-0" aria-hidden />
                       {!rail && label}
                       {!rail && active && <span className="ms-auto h-5 w-1 rounded-full bg-primary" />}
                     </Link>
@@ -182,7 +184,7 @@ export function Sidebar() {
         </button>
         <p className={cn("flex items-center gap-1.5 text-[11px] text-ink-faint", rail && "justify-center")}>
           <span className={online ? "size-1.5 rounded-full bg-primary" : "size-1.5 rounded-full bg-danger"} />
-          {!rail && (online ? "متصل" : "غير متصل — البيع يُحفَظ محليًا")}
+          {!rail && (online ? "متصل" : "غير متصل — البيع معطّل")}
         </p>
       </div>
     </aside>

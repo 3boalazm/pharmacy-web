@@ -18,11 +18,11 @@ export async function listPrescriptions(p: { status?: string; customerId?: strin
 export async function createPrescription(input: {
   customerId?: string; doctorName?: string; notes?: string;
   lines: { medicineId: string; quantity: number; note?: string }[];
-}) {
-  return api<Prescription>("/prescriptions", { method: "POST", idempotencyKey: uuidv7(), body: input });
+}, idempotencyKey?: string) {
+  return api<Prescription>("/prescriptions", { method: "POST", idempotencyKey: idempotencyKey ?? uuidv7(), body: input });
 }
-export async function cancelPrescription(id: string) {
-  return api<Prescription>(`/prescriptions/${id}/cancel`, { method: "POST", idempotencyKey: uuidv7() });
+export async function cancelPrescription(id: string, idempotencyKey?: string) {
+  return api<Prescription>(`/prescriptions/${id}/cancel`, { method: "POST", idempotencyKey: idempotencyKey ?? uuidv7() });
 }
 
 /** تسليم الروشتة للسلة عبر sessionStorage — فك ارتباط كامل عن موديول POS. */

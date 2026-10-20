@@ -23,8 +23,8 @@ export async function setOrderStatus(id: string, status: string, reason?: string
   return api<AdminOrder>(`/orders/${id}/status`, { method: "PATCH", body: { status, reason } });
 }
 /** READY → فاتورة حقيقية عبر البيع الذري (idempotent). */
-export async function deliverOrder(id: string, payment: "CASH" | "CARD" | "CREDIT") {
+export async function deliverOrder(id: string, payment: "CASH" | "CARD" | "CREDIT", idempotencyKey?: string) {
   return api<{ invoiceId: string; invoiceNo: string; total: Money }>(`/orders/${id}/deliver`, {
-    method: "POST", idempotencyKey: uuidv7(), body: { payment },
+    method: "POST", idempotencyKey: idempotencyKey ?? uuidv7(), body: { payment },
   });
 }

@@ -14,8 +14,10 @@ export async function getDailyReconciliation(signal?: AbortSignal) {
   return api<ReconciliationReport>("/finance/reconciliation/daily", { signal });
 }
 /** POST /finance/periods/:yyyymm/close — period lock (OWNER). */
-export async function closePeriod(yearMonth: string) {
-  return api<{ closed: string }>(`/finance/periods/${yearMonth}/close`, { method: "POST", body: {} });
+export async function closePeriod(yearMonth: string, idempotencyKey?: string) {
+  return api<{ closed: string }>(`/finance/periods/${yearMonth}/close`, {
+    method: "POST", idempotencyKey: idempotencyKey ?? uuidv7(), body: {},
+  });
 }
 
 // ───────────── الخزينة وحركة النقدية والأقساط المجمعة (الموديول المالي — Sprint 2) ─────────────
@@ -35,11 +37,11 @@ export async function cashSummary(signal?: AbortSignal) {
 export async function cashEntries(p: { type?: string; categoryId?: string; from?: string; to?: string; skip?: number }, signal?: AbortSignal) {
   return api<{ rows: CashEntry[]; total: number }>(`/cash/entries${qs({ ...p, take: 50 })}`, { signal });
 }
-export async function createCashEntry(input: { type: CashEntryType; amount: string; memo: string; categoryId?: string }) {
-  return api<CashEntry>("/cash/entries", { method: "POST", idempotencyKey: uuidv7(), body: input });
+export async function createCashEntry(input: { type: CashEntryType; amount: string; memo: string; categoryId?: string }, idempotencyKey?: string) {
+  return api<CashEntry>("/cash/entries", { method: "POST", idempotencyKey: idempotencyKey ?? uuidv7(), body: input });
 }
-export async function reverseCashEntry(id: string, reason?: string) {
-  return api<CashEntry>(`/cash/entries/${id}/reverse`, { method: "POST", idempotencyKey: uuidv7(), body: { reason } });
+export async function reverseCashEntry(id: string, reason?: string, idempotencyKey?: string) {
+  return api<CashEntry>(`/cash/entries/${id}/reverse`, { method: "POST", idempotencyKey: idempotencyKey ?? uuidv7(), body: { reason } });
 }
 export async function cashCategories(signal?: AbortSignal) {
   return api<CashCategory[]>("/cash/categories", { signal });
@@ -59,8 +61,8 @@ export async function cashFlow(p: { from?: string; to?: string }, signal?: Abort
 }
 
 /** سداد دفعة لمورد — المسار قائم في الخادم. */
-export async function paySupplier(input: { supplierId: string; amount: string; memo?: string }) {
-  return api<{ balanceAfter: Money }>("/finance/ap/payments", { method: "POST", idempotencyKey: uuidv7(), body: input });
+export async function paySupplier(input: { supplierId: string; amount: string; memo?: string }, idempotencyKey?: string) {
+  return api<{ balanceAfter: Money }>("/finance/ap/payments", { method: "POST", idempotencyKey: idempotencyKey ?? uuidv7(), body: input });
 }
 
 // ───────────── تتبّع القيد + أعمار الديون (Customer Ledger completeness) ─────────────

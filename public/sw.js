@@ -1,12 +1,15 @@
-/* صيدليتي Service Worker — installability + shell offline + push-ready.
+/* صيدليتي Service Worker — installability + offline shell + push-ready.
  *
- * HARD RULE (mirrors ADR-004/005): /api/* is NEVER cached and NEVER served
- * from cache. Money and stock must not come from a stale copy. Offline WRITES
- * are handled at the app layer (command queue + uuidv7 idempotency keys →
- * POST /sales/sync, server-authoritative). The SW only makes the SHELL work:
- * the app opens, navigates, and queues — even with zero connectivity.
+ * HARD RULES
+ *  1) /api/* is NEVER cached and NEVER served from cache. Money and stock must
+ *     never come from a stale copy.
+ *  2) Offline WRITES are NOT queued. Writes require connectivity + an
+ *     idempotency key; POS checkout is blocked while offline.
+ *  3) Authenticated HTML is NEVER written to the cache. Only public routes are
+ *     cacheable, so a shared pharmacy device cannot show the previous user's
+ *     pages after logout / session expiry.
  */
-const VERSION = "v1.0.0";
+const VERSION = "v1.1.0";
 const SHELL_CACHE = `shell-${VERSION}`;
 const STATIC_CACHE = `static-${VERSION}`;
 const OFFLINE_URL = "/offline";
@@ -17,6 +20,13 @@ const PRECACHE = [
   "/icons/icon-192.png",
   "/icons/icon-512.png",
 ];
+
+/** مسارات عامة فقط: لا بيانات مستخدم ولا جلسة. أي مسار آخر لا يُخزَّن إطلاقًا. */
+const PUBLIC_NAV = [/^\/offline\/?$/, /^\/login\/?$/, /^\/setup\/?$/, /^\/shop\/login\/?$/];
+
+function isPublicNavigation(pathname) {
+  return PUBLIC_NAV.some((re) => re.test(pathname));
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -35,25 +45,47 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+/** الخروج/انتهاء الجلسة يمسح كل الكاش (HTML محفوظ قد يحمل بيانات مستخدم سابق). */
+async function clearAllCaches() {
+  const keys = await caches.keys();
+  await Promise.all(keys.map((k) => caches.delete(k)));
+}
+
+self.addEventListener("message", (event) => {
+  const type = event.data && event.data.type;
+  if (type === "CLEAR_CACHES") event.waitUntil(clearAllCaches());
+  if (type === "SKIP_WAITING") event.waitUntil(self.skipWaiting());
+});
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return; // writes pass through untouched (idempotency lives in the app)
 
   const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return; // third-party: leave the browser alone
 
   // 1) API: network-only. No caching, no fallback — the app layer owns offline behavior.
   if (url.pathname.startsWith("/api/")) return;
 
-  // 2) Navigations: network-first, offline fallback page.
+  // 2) Navigations: network-only with an offline fallback.
+  //    Public pages only are stored; authenticated pages are never cached.
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(SHELL_CACHE).then((c) => c.put(request, copy)).catch(() => undefined);
+          if (res.ok && isPublicNavigation(url.pathname)) {
+            const copy = res.clone();
+            caches.open(SHELL_CACHE).then((c) => c.put(request, copy)).catch(() => undefined);
+          }
           return res;
         })
-        .catch(async () => (await caches.match(request)) ?? (await caches.match(OFFLINE_URL))),
+        .catch(async () => {
+          if (isPublicNavigation(url.pathname)) {
+            const hit = await caches.match(request);
+            if (hit) return hit;
+          }
+          return (await caches.match(OFFLINE_URL)) ?? Response.error();
+        }),
     );
     return;
   }
@@ -70,8 +102,11 @@ self.addEventListener("fetch", (event) => {
         (hit) =>
           hit ??
           fetch(request).then((res) => {
-            const copy = res.clone();
-            caches.open(STATIC_CACHE).then((c) => c.put(request, copy)).catch(() => undefined);
+            // لا نخزّن استجابة خطأ أو إعادة توجيه
+            if (res.ok && res.type === "basic") {
+              const copy = res.clone();
+              caches.open(STATIC_CACHE).then((c) => c.put(request, copy)).catch(() => undefined);
+            }
             return res;
           }),
       ),
@@ -88,6 +123,8 @@ self.addEventListener("push", (event) => {
   } catch {
     /* keep defaults */
   }
+  // لا تفتح روابط خارجية من حمولة غير موثوقة
+  if (typeof data.url !== "string" || !data.url.startsWith("/")) data.url = "/alerts";
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,

@@ -9,7 +9,6 @@ const TABS = [
   { key: "installments", label: "الأقساط" },
   { key: "ar", label: "الحسابات المدينة" },
   { key: "cashflow", label: "حركة النقدية" },
-  { key: "aging", label: "أعمار الديون" },
   { key: "journal", label: "دفتر الأستاذ" },
   { key: "governance", label: "الحوكمة والتسوية" },
 ] as const;
@@ -32,7 +31,6 @@ export default function FinancePage() {
         {tab === "installments" && <InstallmentsView />}
         {tab === "ar" && <ArAgingView />}
         {tab === "cashflow" && <CashFlowView />}
-        {tab === "aging" && <ArAgingView />}
         {tab === "journal" && <JournalView />}
         {tab === "governance" && <div className="space-y-4"><TreasuryCard /><FinanceView /></div>}
       </div>

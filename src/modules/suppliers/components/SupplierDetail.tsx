@@ -14,6 +14,7 @@ import { useToast } from "@/components/ui/toast";
 import { formatMoney, type Money } from "@/lib/utils/money";
 import { cn } from "@/lib/utils/cn";
 import { ArrowRight, HandCoins, Phone } from "lucide-react";
+import { useIntentKey } from "@/lib/hooks/use-intent-key";
 
 interface Supplier { id: string; name: string; phone: string | null; balanceCached: Money }
 
@@ -37,11 +38,13 @@ export function SupplierDetail() {
     select: (r) => r.data,
   });
 
+  const intent = useIntentKey();
   const pay = useMutation({
-    mutationFn: () => paySupplier({ supplierId: id, amount }),
+    mutationFn: () => paySupplier({ supplierId: id, amount }, intent.key),
     onSuccess: () => {
       toast("success", "سُدِّدت الدفعة وقُيِّدت دفتريًا");
       setPayOpen(false); setAmount("");
+      intent.reset();
       qc.invalidateQueries({ queryKey: ["supplier.statement", id] });
       qc.invalidateQueries({ queryKey: ["supplier", id] });
       qc.invalidateQueries({ queryKey: ["cash.summary"] });

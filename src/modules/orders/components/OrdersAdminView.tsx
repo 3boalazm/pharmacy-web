@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listOrders, setOrderStatus, deliverOrder, type AdminOrder } from "../api";
 import { Card } from "@/components/ui/card";
@@ -12,6 +12,8 @@ import { formatMoney } from "@/lib/utils/money";
 import { ApiException } from "@/lib/api/http";
 import { cn } from "@/lib/utils/cn";
 import { Bike, Store, Phone } from "lucide-react";
+import { useIntentKey } from "@/lib/hooks/use-intent-key";
+import { currentShift } from "@/modules/shifts";
 
 const STATUS = {
   PENDING: { label: "جديد", tone: "amber" },
@@ -34,6 +36,17 @@ export function OrdersAdminView() {
   const qc = useQueryClient();
   const [tab, setTab] = useState<(typeof TABS)[number]>("PENDING");
   const [deliverTarget, setDeliverTarget] = useState<AdminOrder | null>(null);
+  const intent = useIntentKey();
+  // التسليم يولّد فاتورة وقيودًا على الدرج — يلزم وردية مفتوحة (الخادم يرفض بغيرها)
+  const shift = useQuery({
+    queryKey: ["shift", "current"],
+    queryFn: async ({ signal }) => (await currentShift(signal)).data,
+    refetchInterval: 60_000,
+  });
+  const shiftOpen = shift.data?.open === true;
+
+  // نية تسليم جديدة لكل طلب (إعادة المحاولة على نفس الطلب تحتفظ بالمفتاح)
+  useEffect(() => { intent.reset(); }, [deliverTarget?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data, isLoading } = useQuery({
     queryKey: ["orders.admin", tab],
@@ -48,9 +61,10 @@ export function OrdersAdminView() {
     onError: (e: Error) => toast("error", e.message),
   });
   const deliver = useMutation({
-    mutationFn: ({ id, payment }: { id: string; payment: "CASH" | "CARD" | "CREDIT" }) => deliverOrder(id, payment),
+    mutationFn: ({ id, payment }: { id: string; payment: "CASH" | "CARD" | "CREDIT" }) => deliverOrder(id, payment, intent.key),
     onSuccess: ({ data }) => {
       toast("success", `تم التسليم — فاتورة ${data.invoiceNo}`);
+      intent.reset();
       setDeliverTarget(null);
       qc.invalidateQueries({ queryKey: ["orders.admin"] });
     },
@@ -120,7 +134,14 @@ export function OrdersAdminView() {
                     </Button>
                   )}
                   {o.status === "READY" && (
-                    <Button size="sm" onClick={() => setDeliverTarget(o)}>تسليم + فاتورة</Button>
+                    <Button
+                      size="sm"
+                      disabled={!shiftOpen}
+                      title={shiftOpen ? "تسليم الطلب وإصدار الفاتورة" : "افتح وردية أولًا — التسليم يُقيَّد على الدرج"}
+                      onClick={() => setDeliverTarget(o)}
+                    >
+                      تسليم + فاتورة
+                    </Button>
                   )}
                 </span>
               </div>
@@ -136,6 +157,11 @@ export function OrdersAdminView() {
             <p className="text-sm text-ink-soft">
               سيُنفَّذ الآن بيع حقيقي بكل بواباته (تعارضات دوائية، مخزون FEFO، حد الائتمان) ويُصدر فاتورة وقيودًا.
             </p>
+            {!shiftOpen && (
+              <p role="alert" className="rounded-el border border-warn/30 bg-warn-soft px-3 py-2 text-xs font-bold text-warn">
+                لا توجد وردية مفتوحة — النقد لن يُعزى إلى درج. افتح وردية من شاشة الورديات ثم أعد المحاولة.
+              </p>
+            )}
             <div className="grid grid-cols-3 gap-2">
               {(["CASH", "CARD", "CREDIT"] as const).map((m) => (
                 <Button key={m} variant={m === "CREDIT" ? "secondary" : "default"} loading={deliver.isPending}

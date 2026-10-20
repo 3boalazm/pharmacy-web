@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { formatMoney } from "@/lib/utils/money";
 import { ApiException } from "@/lib/api/http";
+import { useIntentKey } from "@/lib/hooks/use-intent-key";
+import { getInvoice } from "../api";
 
 /**
  * مرتجع فاتورة (WF-3): اختيار كميات لكل سطر بحد أقصى (المباع − المرتجع سابقًا)؛
@@ -22,6 +24,7 @@ export function ReturnDialog({ invoice, open, onOpenChange }: {
 }) {
   const toast = useToast();
   const qc = useQueryClient();
+  const intent = useIntentKey();
   const [qty, setQty] = useState<Record<string, number>>({});
   const [reason, setReason] = useState("");
 
@@ -33,13 +36,23 @@ export function ReturnDialog({ invoice, open, onOpenChange }: {
         lines: Object.entries(qty)
           .filter(([, q]) => q > 0)
           .map(([salesItemId, quantity]) => ({ salesItemId, quantity })),
-      }),
-    onSuccess: ({ data }) => {
+      }, intent.key),
+    onSuccess: async ({ data }) => {
+      // الاستجابة لا تعيد حركات المخزون/القيد تفصيلًا: نقرأ الفاتورة النهائية للتأكيد نقديًا ومخزنيًا.
+      let extra = "";
+      try {
+        const { data: inv } = await getInvoice(invoice.id);
+        const remaining = inv.lines.reduce((sum, l) => sum + (l.quantity - (l.returnedQty ?? 0)), 0);
+        extra = remaining === 0 ? " · أُعيد كل المصروف للمخزون" : ` · متبقٍ للاسترجاع ${remaining} وحدة`;
+      } catch {
+        extra = " · تعذر تحديث لقطة الفاتورة — أعد تحميلها للتأكيد";
+      }
       toast("success",
         data.refundMethod === "CASH"
-          ? `تم المرتجع — استرداد نقدي ${formatMoney(data.refundTotal)}`
-          : `تم المرتجع — خُصم ${formatMoney(data.refundTotal)} من مديونية العميل`);
+          ? `تم المرتجع — استرداد نقدي ${formatMoney(data.refundTotal)}${extra}`
+          : `تم المرتجع — خُصم ${formatMoney(data.refundTotal)} من مديونية العميل${extra}`);
       setQty({}); setReason("");
+      intent.reset();
       onOpenChange(false);
       qc.invalidateQueries({ queryKey: ["invoice", invoice.id] });
       qc.invalidateQueries({ queryKey: ["invoices"] });

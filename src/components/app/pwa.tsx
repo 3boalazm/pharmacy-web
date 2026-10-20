@@ -23,11 +23,24 @@ function isStandalone() {
 export function PwaProvider() {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [showIosHint, setShowIosHint] = useState(false);
+  const [updateReady, setUpdateReady] = useState<ServiceWorker | null>(null);
 
   useEffect(() => {
     // 1) Register the service worker (production only)
     if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
-      navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((reg) => {
+          // إصدار جديد جاهز: لا نُحدّث تحت يد الكاشير أثناء بيع — نعرض شريطًا يقرر هو.
+          reg.addEventListener("updatefound", () => {
+            const next = reg.installing;
+            if (!next) return;
+            next.addEventListener("statechange", () => {
+              if (next.state === "installed" && navigator.serviceWorker.controller) setUpdateReady(next);
+            });
+          });
+        })
+        .catch(() => undefined);
     }
 
     if (isStandalone()) return; // already installed
@@ -52,6 +65,26 @@ export function PwaProvider() {
     await installEvent.prompt();
     const { outcome } = await installEvent.userChoice;
     if (outcome === "accepted") setInstallEvent(null);
+  }
+
+  if (updateReady) {
+    return (
+      <div role="status" className="rise fixed bottom-4 start-4 z-40 flex max-w-md items-center gap-3 rounded-card border border-line bg-card p-3 text-sm shadow-pop">
+        <p className="flex-1">يتوفر إصدار أحدث من التطبيق.</p>
+        <button
+          onClick={() => {
+            updateReady.postMessage({ type: "SKIP_WAITING" });
+            navigator.serviceWorker.addEventListener("controllerchange", () => window.location.reload(), { once: true });
+          }}
+          className="rounded-el bg-primary px-3 py-1.5 text-xs font-bold text-white hover:bg-primary-ink"
+        >
+          تحديث الآن
+        </button>
+        <button onClick={() => setUpdateReady(null)} aria-label="لاحقًا" className="rounded p-1 text-ink-faint hover:bg-paper">
+          <X className="size-4" />
+        </button>
+      </div>
+    );
   }
 
   if (installEvent) {

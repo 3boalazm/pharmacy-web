@@ -16,10 +16,10 @@ export async function createReturn(input: {
   invoiceId: string;
   reason: string;
   lines: { salesItemId: string; quantity: number }[];
-}) {
+}, idempotencyKey?: string) {
   return api<{ returnId: string; refundTotal: string; refundMethod: "CASH" | "AR_CREDIT"; journalEntryId: string }>(
     "/sales/returns",
-    { method: "POST", idempotencyKey: uuidv7(), body: input },
+    { method: "POST", idempotencyKey: idempotencyKey ?? uuidv7(), body: input },
   );
 }
 

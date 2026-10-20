@@ -1,8 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ApiException, api } from "@/lib/api/http";
+import { useQueryClient } from "@tanstack/react-query";
+import { ApiException, api, RETURN_TO_KEY } from "@/lib/api/http";
 import { setSession, type SessionPharmacy, type SessionUser } from "@/lib/auth/session";
+import { getDeviceId } from "@/lib/auth/device";
 import { bootstrapStatus } from "@/modules/identity";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,8 +18,21 @@ interface LoginResponse {
   pharmacy?: SessionPharmacy;
 }
 
+/** يعيد مسارًا داخليًا آمنًا فقط (لا open redirect). */
+function takeReturnTo(): string | null {
+  if (typeof window === "undefined") return null;
+  let target: string | null = null;
+  try { target = sessionStorage.getItem(RETURN_TO_KEY); } catch { /* تجاهل */ }
+  if (!target) target = new URLSearchParams(window.location.search).get("returnTo");
+  try { sessionStorage.removeItem(RETURN_TO_KEY); } catch { /* تجاهل */ }
+  if (!target || !target.startsWith("/") || target.startsWith("//")) return null;
+  if (target.startsWith("/login") || target.startsWith("/setup")) return null;
+  return target;
+}
+
 export default function LoginPage() {
   const router = useRouter();
+  const qc = useQueryClient();
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string>();
@@ -36,12 +51,18 @@ export default function LoginPage() {
     try {
       const { data } = await api<LoginResponse>("/auth/login", {
         method: "POST",
-        body: { phone, password, deviceId: "web-admin" },
+        body: { phone: phone.trim(), password, deviceId: getDeviceId() },
       });
-      setSession({ accessToken: data.accessToken, user: data.user, pharmacy: data.pharmacy });
-      router.replace("/pos");
+      // كاش المستخدم السابق لا يورث للجلسة الجديدة (جهاز مشترك)
+      qc.clear();
+      setSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user: data.user, pharmacy: data.pharmacy });
+      router.replace(takeReturnTo() ?? "/pos");
     } catch (err) {
-      setError(err instanceof ApiException ? err.error.message : "تعذر الاتصال بالخادم");
+      if (err instanceof ApiException && err.status === 429) {
+        setError(err.retryAfter ? `محاولات كثيرة — حاول بعد ${err.retryAfter} ثانية` : "محاولات كثيرة — حاول لاحقًا");
+      } else {
+        setError(err instanceof ApiException ? err.error.message : "تعذر الاتصال بالخادم");
+      }
     } finally {
       setLoading(false);
     }
@@ -58,8 +79,8 @@ export default function LoginPage() {
           <p className="text-sm text-ink-faint">سجّل الدخول للمتابعة</p>
         </div>
         <div className="space-y-4">
-          <Input label="رقم الهاتف" inputMode="tel" dir="ltr" className="text-end" value={phone} onChange={(e) => setPhone(e.target.value)} required />
-          <Input label="كلمة المرور" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <Input label="رقم الهاتف" inputMode="tel" autoComplete="tel" dir="ltr" className="text-end" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+          <Input label="كلمة المرور" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           {error && <p className="rounded-el bg-danger-soft px-3 py-2 text-sm font-medium text-danger">{error}</p>}
           <Button type="submit" size="lg" className="w-full" loading={loading}>دخول</Button>
         </div>

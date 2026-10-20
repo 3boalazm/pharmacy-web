@@ -36,7 +36,7 @@ export function SetupForm() {
       const { data } = await bootstrap({
         pharmacyName: v.pharmacyName, ownerName: v.ownerName, phone: v.phone, password: v.password, pin: v.pin,
       });
-      setSession({ accessToken: data.accessToken, user: data.user, pharmacy: data.pharmacy });
+      setSession({ accessToken: data.accessToken, refreshToken: (data as { refreshToken?: string }).refreshToken, user: data.user, pharmacy: data.pharmacy });
       router.replace("/");
     } catch (err) {
       if (err instanceof ApiException && err.error.code === "FORBIDDEN") {

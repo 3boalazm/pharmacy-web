@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { usePosStore, cartTotals, redeemValue } from "../store";
+import { usePosStore, cartTotals, redeemValue, maxRedeemablePoints } from "../store";
 import { TAX_EXEMPT_LABEL, TAX_LABEL, TAX_RATE } from "../tax";
 import { CustomerSelect } from "./CustomerSelect";
 import { getLastInvoiceForCustomer } from "@/modules/sales";
@@ -21,6 +21,12 @@ import type { Discount } from "@/lib/zod/common";
 export function SummaryPanel({ onCheckout, busy }: { onCheckout: () => void; busy: boolean }) {
   const { lines, invoiceDiscount, customer, redeemPoints, setRedeemPoints } = usePosStore();
   const totals = cartTotals(lines, invoiceDiscount);
+  const maxPoints = Math.min(customer?.loyaltyPoints ?? 0, maxRedeemablePoints(totals.total));
+
+  // لو تقلّصت السلة بعد استبدال نقاط، نُعيد ضبطها إلى الحد المسموح (منع الإجمالي السالب)
+  useEffect(() => {
+    if (redeemPoints > maxPoints) setRedeemPoints(maxPoints);
+  }, [redeemPoints, maxPoints, setRedeemPoints]);
 
   return (
     <Card className="flex h-full min-h-0 flex-col">
@@ -33,13 +39,13 @@ export function SummaryPanel({ onCheckout, busy }: { onCheckout: () => void; bus
           <div className="rounded-el border border-line p-3">
             <p className="mb-1.5 flex items-center justify-between text-xs font-bold text-ink-soft">
               <span>استبدال نقاط الولاء</span>
-              <span className="num text-ink-faint">المتاح {customer.loyaltyPoints} نقطة = {redeemValue(customer.loyaltyPoints).toFixed(2)} ج.م</span>
+              <span className="num text-ink-faint">المتاح {customer.loyaltyPoints} نقطة · أقصى استبدال لهذه الفاتورة {maxPoints} نقطة = {redeemValue(maxPoints).toFixed(2)} ج.م</span>
             </p>
             <div className="flex items-center gap-2">
-              <Input type="number" min={0} max={customer.loyaltyPoints} dir="ltr" className="num h-9 text-end"
+              <Input type="number" min={0} max={maxPoints} dir="ltr" className="num h-9 text-end"
                 value={redeemPoints || ""} placeholder="0"
-                onChange={(e) => setRedeemPoints(Math.min(Math.max(0, Number(e.target.value) || 0), customer.loyaltyPoints))} />
-              <Button type="button" size="sm" variant="secondary" onClick={() => setRedeemPoints(customer.loyaltyPoints)}>الكل</Button>
+                onChange={(e) => setRedeemPoints(Math.min(Math.max(0, Number(e.target.value) || 0), maxPoints))} />
+              <Button type="button" size="sm" variant="secondary" disabled={maxPoints === 0} onClick={() => setRedeemPoints(maxPoints)}>الكل</Button>
             </div>
           </div>
         )}

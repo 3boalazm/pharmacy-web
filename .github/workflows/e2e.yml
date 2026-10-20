@@ -1,0 +1,56 @@
+name: E2E (staging)
+
+# لا يعمل تلقائيًا: يحتاج بيئة staging + حساب اختبار + أسرار.
+# التشغيل اليدوي من GitHub → Actions → E2E (staging) → Run workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "عنوان الواجهة (staging)"
+        required: true
+      api_url:
+        description: "عنوان الـ API (staging)"
+        required: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify deployment wiring (CSP / CORS / API)
+        run: node scripts/verify-deployment.mjs "${{ inputs.base_url }}" "${{ inputs.api_url }}"
+
+      - name: Contract tests against staging
+        env:
+          CONTRACT_API_URL: ${{ inputs.api_url }}
+          CONTRACT_PHONE: ${{ secrets.STAGING_PHONE }}
+          CONTRACT_PASSWORD: ${{ secrets.STAGING_PASSWORD }}
+        run: npx vitest run tests/contract
+
+      - name: E2E smoke
+        env:
+          E2E_BASE_URL: ${{ inputs.base_url }}
+          E2E_API_URL: ${{ inputs.api_url }}
+          E2E_PHONE: ${{ secrets.STAGING_PHONE }}
+          E2E_PASSWORD: ${{ secrets.STAGING_PASSWORD }}
+        run: npx playwright test
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 14

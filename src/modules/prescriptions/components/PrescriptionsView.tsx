@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, qs } from "@/lib/api/http";
@@ -15,6 +15,8 @@ import { useToast } from "@/components/ui/toast";
 import { hasRole } from "@/lib/auth/session";
 import { cn } from "@/lib/utils/cn";
 import { FilePlus2, Search, ShoppingCart, Trash2, XCircle } from "lucide-react";
+import { useIntentKey } from "@/lib/hooks/use-intent-key";
+import { uuidv7 } from "@/lib/utils/uuid";
 
 const STATUS_META = {
   READY: { label: "جاهزة للصرف", tone: "blue" as const },
@@ -30,6 +32,9 @@ export function PrescriptionsView() {
   const canWrite = hasRole(["ASSISTANT", "PHARMACIST"]);
   const [status, setStatus] = useState<"READY" | "DISPENSED" | "CANCELLED">("READY");
   const [formOpen, setFormOpen] = useState(false);
+  const createIntent = useIntentKey();
+  // مفتاح ثابت لكل روشتة على حدة: إعادة محاولة نفس الإلغاء لا تكرر الأثر
+  const cancelKeys = useRef<Map<string, string>>(new Map());
 
   // ── نموذج الإنشاء ──
   const [doctorName, setDoctorName] = useState("");
@@ -56,17 +61,26 @@ export function PrescriptionsView() {
         doctorName: doctorName || undefined,
         notes: notes || undefined,
         lines: picked.map((p) => ({ medicineId: p.medicine.id, quantity: p.quantity })),
-      }),
+      }, createIntent.key),
     onSuccess: () => {
       toast("success", "سُجلت الروشتة — جاهزة للصرف");
       setFormOpen(false); setPicked([]); setDoctorName(""); setNotes(""); setSearch("");
+      createIntent.reset();
       qc.invalidateQueries({ queryKey: ["rx.list"] });
     },
     onError: (e: Error) => toast("error", e.message),
   });
   const cancel = useMutation({
-    mutationFn: (id: string) => cancelPrescription(id),
-    onSuccess: () => { toast("success", "أُلغيت الروشتة"); qc.invalidateQueries({ queryKey: ["rx.list"] }); },
+    mutationFn: (id: string) => {
+      let key = cancelKeys.current.get(id);
+      if (!key) { key = uuidv7(); cancelKeys.current.set(id, key); }
+      return cancelPrescription(id, key);
+    },
+    onSuccess: (_data, id) => {
+      cancelKeys.current.delete(id);
+      toast("success", "أُلغيت الروشتة");
+      qc.invalidateQueries({ queryKey: ["rx.list"] });
+    },
     onError: (e: Error) => toast("error", e.message),
   });
 

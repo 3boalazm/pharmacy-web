@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
 import { formatMoney } from "@/lib/utils/money";
 import { ApiException } from "@/lib/api/http";
+import { useIntentKey } from "@/lib/hooks/use-intent-key";
 import { hasRole } from "@/lib/auth/session";
 import { Clock, Lock, Banknote } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
@@ -30,9 +31,9 @@ export function ShiftView() {
   const canHistory = hasRole(["PHARMACIST"]);
 
   const cur = useQuery({
-    queryKey: ["shift.current"],
-    queryFn: ({ signal }) => currentShift(signal),
-    select: (r) => r.data,
+    queryKey: ["shift", "current"],
+    // نفس مفتاح الشريط الجانبي وPOS: شكل واحد للبيانات = لا تصادم في الكاش
+    queryFn: async ({ signal }) => (await currentShift(signal)).data,
     refetchInterval: 30_000,
   });
   const history = useQuery({
@@ -42,17 +43,20 @@ export function ShiftView() {
     enabled: canHistory,
   });
 
+  const openIntent = useIntentKey();
   const doOpen = useMutation({
-    mutationFn: () => openShift(openingFloat),
+    mutationFn: () => openShift(openingFloat, openIntent.key),
     onSuccess: () => {
       toast("success", "فُتحت الوردية — بيع موفق");
       setOpenDialog(false); setOpeningFloat("");
-      qc.invalidateQueries({ queryKey: ["shift.current"] });
+      openIntent.reset();
+      qc.invalidateQueries({ queryKey: ["shift", "current"] });
     },
     onError: (e: unknown) => toast("error", e instanceof ApiException ? e.error.message : "تعذر فتح الوردية"),
   });
+  const intent = useIntentKey();
   const doClose = useMutation({
-    mutationFn: () => closeShift(cur.data!.shift!.id, countedCash),
+    mutationFn: () => closeShift(cur.data!.shift!.id, countedCash, intent.key),
     onSuccess: ({ data }) => {
       const os = Number(data.overShort ?? 0);
       toast(os === 0 ? "success" : "error",
@@ -60,7 +64,8 @@ export function ShiftView() {
           : os < 0 ? `أُقفلت الوردية — عجز ${formatMoney(String(-os))} (تقيّد تلقائيًا)`
           : `أُقفلت الوردية — زيادة ${formatMoney(String(os))} (تقيّدت تلقائيًا)`);
       setCloseDialog(false); setCountedCash("");
-      qc.invalidateQueries({ queryKey: ["shift.current"] });
+      intent.reset();
+      qc.invalidateQueries({ queryKey: ["shift", "current"] });
       qc.invalidateQueries({ queryKey: ["shifts"] });
     },
     onError: (e: unknown) => toast("error", e instanceof ApiException ? e.error.message : "تعذر الإقفال"),

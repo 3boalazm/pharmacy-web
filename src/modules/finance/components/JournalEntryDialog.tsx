@@ -25,6 +25,9 @@ export function JournalEntryDialog({ entryId, onClose }: { entryId: string | nul
     (a, l) => ({ d: a.d + Number(l.debit), c: a.c + Number(l.credit) }),
     { d: 0, c: 0 },
   );
+  // التوازن يُحسب فعليًا من الأطراف (وليس نصًا ثابتًا)؛ السماحية 0.005 لتغطية تقريب العملة.
+  const imbalance = totals ? Math.abs(totals.d - totals.c) : 0;
+  const balanced = !!totals && imbalance <= 0.005;
 
   return (
     <Dialog open={!!entryId} onOpenChange={(o) => !o && onClose()}>
@@ -52,10 +55,17 @@ export function JournalEntryDialog({ entryId, onClose }: { entryId: string | nul
                   ))}
                 </tbody>
               </Table>
-              <p className="flex justify-between rounded-el bg-primary-soft px-3 py-2 text-xs font-bold text-primary-ink">
-                <span>متوازن ✓</span>
+              <p className={balanced
+                ? "flex justify-between rounded-el bg-primary-soft px-3 py-2 text-xs font-bold text-primary-ink"
+                : "flex justify-between rounded-el border border-danger/40 bg-danger-soft px-3 py-2 text-xs font-bold text-danger"}>
+                <span>
+                  {balanced ? "متوازن ✓" : `غير متوازن — فرق ${imbalance.toFixed(4)}`}
+                </span>
                 <span className="num">{totals?.d.toFixed(2)} = {totals?.c.toFixed(2)}</span>
               </p>
+              {!balanced && (
+                <p className="text-[11px] text-danger">لا تُبنَ أي تقارير مالية على قيد غير متوازن — أبلغ الدعم برقم القيد.</p>
+              )}
             </>
           )}
         </DialogBody>

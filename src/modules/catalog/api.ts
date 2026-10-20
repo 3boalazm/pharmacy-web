@@ -1,5 +1,6 @@
 "use client";
 import { api, qs } from "@/lib/api/http";
+import { uuidv7 } from "@/lib/utils/uuid";
 import type { Medicine } from "./types";
 
 /** GET /medicines?search=&include=stock — instant search + product list (Contract §3). */
@@ -21,14 +22,15 @@ export async function createMedicine(input: {
   tradeName: string; tradeNameAr: string; scientificName: string; form: string;
   company?: string; barcode?: string; internalCode: string; sellPrice: string;
   minStockLevel: number; requiresPrescription: boolean; isControlled: boolean;
-}) {
-  return api<Medicine>("/medicines", { method: "POST", body: input });
+}, idempotencyKey?: string) {
+  return api<Medicine>("/medicines", { method: "POST", idempotencyKey: idempotencyKey ?? uuidv7(), body: input });
 }
 
 /** POST /medicines/import-base — استيراد كتالوج 1,951 صنفًا من داخل النظام (OWNER، idempotent). */
-export async function importBaseCatalog() {
+export async function importBaseCatalog(idempotencyKey?: string) {
   return api<{ fileItems: number; inserted: number; alreadyExisted: number }>("/medicines/import-base", {
     method: "POST",
+    idempotencyKey: idempotencyKey ?? uuidv7(),
     body: {},
   });
 }

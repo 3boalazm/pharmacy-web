@@ -1,4 +1,5 @@
 "use client";
+import { uuidv7 } from "@/lib/utils/uuid";
 import { api } from "@/lib/api/http";
 import type { SessionPharmacy, SessionUser } from "@/lib/auth/session";
 
@@ -28,8 +29,11 @@ export async function bootstrap(input: { pharmacyName: string; ownerName: string
 export async function listUsers(signal?: AbortSignal) {
   return api<ManagedUser[]>("/users", { signal });
 }
-export async function createUser(input: { name: string; phone: string; password: string; role: ManagedUser["role"]; pin?: string }) {
-  return api<ManagedUser>("/users", { method: "POST", body: input });
+export async function createUser(
+  input: { name: string; phone: string; password: string; role: ManagedUser["role"]; pin?: string },
+  idempotencyKey?: string,
+) {
+  return api<ManagedUser>("/users", { method: "POST", idempotencyKey: idempotencyKey ?? uuidv7(), body: input });
 }
 export async function updateUser(
   id: string,

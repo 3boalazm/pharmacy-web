@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { createMedicine } from "../api";
+import { useIntentKey } from "@/lib/hooks/use-intent-key";
 import { zMoney } from "@/lib/zod/common";
 import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -30,14 +31,15 @@ export function CreateMedicineDialog({ open, onOpenChange, onCreated }: {
   open: boolean; onOpenChange: (o: boolean) => void; onCreated: () => void;
 }) {
   const toast = useToast();
+  const intent = useIntentKey();
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { minStockLevel: 5, requiresPrescription: false, isControlled: false },
   });
 
   const create = useMutation({
-    mutationFn: (v: FormValues) => createMedicine(v),
-    onSuccess: () => { toast("success", "تمت إضافة المنتج"); form.reset(); onCreated(); },
+    mutationFn: (v: FormValues) => createMedicine(v, intent.key),
+    onSuccess: () => { toast("success", "تمت إضافة المنتج"); intent.reset(); form.reset(); onCreated(); },
     onError: (e: Error) => toast("error", e.message),
   });
 

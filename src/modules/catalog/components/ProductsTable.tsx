@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { importBaseCatalog, listMedicines } from "../api";
 import { CreateMedicineDialog } from "./CreateMedicineDialog";
@@ -16,6 +16,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/toast";
 import { LabelSheet, type LabelItem } from "./LabelSheet";
 import { printArea } from "@/lib/utils/print";
+import { useIntentKey } from "@/lib/hooks/use-intent-key";
 
 /** Product List — catalog master data (descriptive truth; quantities live in Inventory). */
 export function ProductsTable() {
@@ -24,13 +25,24 @@ export function ProductsTable() {
   const [stockStatus, setStockStatus] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [labels, setLabels] = useState<LabelItem[] | null>(null);
+
+  // ننتظر حتى تُرسم الورقة فعلًا ثم نطبع (بدل مؤقت 60ms الذي قد يسبق الرسم)
+  useEffect(() => {
+    if (!labels) return;
+    const raf = requestAnimationFrame(() => {
+      requestAnimationFrame(() => printArea("labels"));
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [labels]);
   const canWrite = hasRole(["PHARMACIST"]);
   const isOwner = getSession()?.user.role === "OWNER";
   const toast = useToast();
+  const importIntent = useIntentKey();
   const importBase = useMutation({
-    mutationFn: importBaseCatalog,
+    mutationFn: () => importBaseCatalog(importIntent.key),
     onSuccess: ({ data }) => {
       toast("success", `اكتمل الاستيراد: أُضيف ${data.inserted} صنفًا (${data.alreadyExisted} كانوا موجودين)`);
+      importIntent.reset();
       refetch();
     },
     onError: (e: Error) => toast("error", e.message),
@@ -64,7 +76,7 @@ export function ProductsTable() {
         <span className="ms-auto flex gap-2">
           {isOwner && (
             <Button size="sm" variant="secondary" loading={importBase.isPending} onClick={() => importBase.mutate()}>
-              <DatabaseZap className="size-4" /> استيراد قاعدة الأدوية (1,951)
+              <DatabaseZap className="size-4" /> استيراد قاعدة الأدوية
             </Button>
           )}
           {canWrite && (
@@ -106,7 +118,6 @@ export function ProductsTable() {
                   <Button size="sm" variant="ghost" title="طباعة ليبل باركود"
                     onClick={() => {
                       setLabels(Array.from({ length: 12 }, () => ({ code: m.internalCode, name: m.tradeNameAr, price: m.sellPrice })));
-                      setTimeout(() => printArea("labels"), 60);
                     }}>
                     <Printer className="size-3.5" />
                   </Button>

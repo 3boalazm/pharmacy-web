@@ -57,15 +57,31 @@ consume tokens via Tailwind theme — hard-coded colors fail review.
 - `public/manifest.webmanifest` — الاسم والأيقونات (any + maskable) واختصارات POS/العملاء/المخزون، RTL.
 - `public/sw.js` — Service worker مكتوب يدويًا وقابل للمراجعة:
   - **قاعدة صارمة: `/api/*` لا يُكاش أبدًا** — الفلوس والمخزون لا يُقدَّمان من نسخة قديمة؛
-    الأوفلاين للكتابة محلول في طبقة التطبيق (طابور أوامر بمفاتيح uuidv7 → `/sales/sync`).
+    **الأوفلاين للكتابة غير منفّذ**: لا يوجد طابور ولا `/sales/sync`؛ البيع يتطلب اتصالًا، وسلة POS تُحفظ محليًا
+    كمسودة فقط. قرار البيع بلا اتصال مؤجَّل صراحةً لحين وجود مزامنة خلفية مُثبتة.
   - التنقّل: network-first مع صفحة `/offline` كبديل · أصول البناء والأيقونات والخطوط: cache-first.
   - جاهز للإشعارات: معالجا `push` و`notificationclick` (عقد الحمولة: `{title, body, url}`).
 - زر **تثبيت التطبيق** يظهر تلقائيًا (Chromium)، وتلميح «إضافة إلى الشاشة الرئيسية» على iOS.
+
+## الجاهزية والتحقق
+
+```bash
+npm run verify        # typecheck + lint + tests + boundaries + secrets + audit + build
+npm test              # اختبارات الوحدة (منطق مالي، جلسة، شبكة، CSV)
+CONTRACT_API_URL=... npm run test:contract   # عقد الـ API على staging
+npm run verify:deploy -- <frontend> <api>    # CSP/CORS/ترويسات/وصول /api/v1
+npx playwright test   # E2E (يحتاج Chromium + staging)
+```
+
+دليل الطوارئ والنسخ الاحتياطي والتراجع: `docs/runbook.md`.
+
+> **نطاق مُثبت**: كل ما سبق يعمل محليًا إلا E2E (تنزيل المتصفح محجوب في بيئة التطوير هنا)
+> واختبارات العقد/النشر (تحتاج بيئة staging). لا نعتبر شيئًا «مُثبتًا» بلا تشغيل.
 
 ## نشر مجاني للبداية
 | الطبقة | الخدمة | ملاحظات |
 |---|---|---|
 | Frontend | Vercel Free | اضبط `NEXT_PUBLIC_API_BASE_URL` على رابط الـ API الكامل |
-| Backend | Render/Koyeb Free | اضبط `CORS_ORIGIN` على دومين Vercel · **تنبيه:** الخطة المجانية تنام بعد الخمول — أول طلب صباحي بطيء، وطابور POS الأوفلاين يغطي الانقطاع لكن ليس بطء الإيقاظ |
+| Backend | Render/Koyeb Free | اضبط `CORS_ORIGIN` على دومين Vercel · **تنبيه:** الخطة المجانية تنام بعد الخمول — أول طلب صباحي بطيء؛ ولا يوجد طابور أوفلاين يغطي الانقطاع |
 | Database | Neon Free | `DATABASE_URL` (مع pooler) ثم `prisma migrate deploy` + ملف `001_invariants.sql` |
 | Redis | اختياري | بدونها يعمل النظام بكامل صحته (وضع متدهور موثَّق) |
